@@ -1,12 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!--
-   Property List.plist
-   Marush
-
-   Created by s2s s2s on 31.01.2026.
-   Copyright (c) 2026 ___ORGANIZATIONNAME___. All rights reserved.
--->
 <plist version="1.0">
-<dict/>
+<dict>
+	<key>UIAppFonts</key>
+    <array>
+        <string>Poppins-Black.ttf</string>
+        <string>Poppins-BlackItalic.ttf</string>
+        <string>Poppins-Bold.ttf</string>
+        <string>Poppins-BoldItalic.ttf</string>
+        <string>Poppins-ExtraBold.ttf</string>
+        <string>Poppins-ExtraBoldItalic.ttf</string>
+        <string>Poppins-ExtraLight.ttf</string>
+        <string>Poppins-ExtraLightItalic.ttf</string>
+        <string>Poppins-Italic.ttf</string>
+        <string>Poppins-Light.ttf</string>
+        <string>Poppins-LightItalic.ttf</string>
+        <string>Poppins-Medium.ttf</string>
+        <string>Poppins-MediumItalic.ttf</string>
+        <string>Poppins-Regular.ttf</string>
+        <string>Poppins-SemiBold.ttf</string>
+        <string>Poppins-SemiBoldItalic.ttf</string>
+        <string>Poppins-Thin.ttf</string>
+        <string>Poppins-ThinItalic.ttf</string>
+    </array>
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
+    <key>UIDesignRequiresCompatibility</key>
+    <true/>
+</dict>
 </plist>

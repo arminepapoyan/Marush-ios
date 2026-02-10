@@ -54,8 +54,8 @@ struct TabContent: View {
                 title: getLocalString(string: "my_orders"),
                 icon: "ic-orders"
             ) {
-                HomeView()
-                    .environmentObject(settings)
+                HomeTestView()
+//                    .environmentObject(settings)
             }
 
             TabBarItem(

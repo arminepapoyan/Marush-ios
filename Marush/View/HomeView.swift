@@ -10,94 +10,91 @@ struct HomeView: View {
     @EnvironmentObject var settings: UserSettings
     @EnvironmentObject var appData: AppDataViewModel
     
-    @State var showHeader: Bool = true
-    @State private var offset = CGFloat.zero
+    let horizontalPadding = GlobalSettings.shared.horizontalPadding
     
     @State var isLoading = true
     
     @State private var showAlert: Bool = false
     @State private var errorMess: String = ""
     
+    @State private var selectedCategory: Category? = nil
+    @State private var searchText = ""
+    
     var body: some View {
         NavigationView{
-            ZStack{
-                ZStack{
-                    Color(.white)
-                        .ignoresSafeArea()
-                    VStack(spacing: 0){
-                        Text("aksjhkasjdhkasd")
-                        ScrollView(.vertical,showsIndicators: false){
-                            VStack(spacing: 10) {
-                                
-                                // Pass the converted array to BannerSlider
-//                                if !appData.bannerImages.isEmpty {
-//                                    if isLoading{
-//                                        homeSliderShimmer()
-//                                    } else{
-//                                        BannerSlider(bannerSlider: appData.bannerImages)
-//                                            .padding(.top, -2)
-//                                    }
-//                                }
-//                                if !appData.productsBestseller.isEmpty {
-//                                    ProductsSlider(isLoading: $isLoading, products: appData.productsBestseller)
-//                                        .environmentObject(settings)
-//                                }
-//                                if !appData.newForYouImages.isEmpty {
-//                                    newForYouGifSlider(isLoading: $isLoading, arr: appData.newForYouImages)
-//                                        .environmentObject(settings)
-//                                }
-                            }
-                            .background(GeometryReader {
-                                Color.clear.preference(key: ViewOffsetKey.self,
-                                                       value: -$0.frame(in: .named("scroll")).origin.y)
-                            })
-                            .onPreferenceChange(ViewOffsetKey.self) {
-                                offset = $0
-                                if offset > 0{
-                                    withAnimation{
-                                        showHeader = false
-                                    }
-                                } else{
-                                    withAnimation{
-                                        showHeader = true
-                                    }
-                                }
-                            }
-                            bottomShadowIgnore(count: UIDevice.current.localizedModel == "iPad" ? 7 : settings.cart_count == 0 ? 2 : 5)
+            ZStack(alignment: .top) {
+                Color(UIColor(named: "CEF0F7")!)
+                    .frame(height: UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0)
+                    .ignoresSafeArea(edges: .top)
+                VStack(spacing: 0){
+                    ScrollView(.vertical,showsIndicators: false){
+                        GreetingView(isLoading: $isLoading, searchText: $searchText, name: userData.name, phone: appData.phone ?? "", horizontalPadding: horizontalPadding, settings: settings)
+                        VStack(spacing: 20) {
+                            categoriesSlider
+                            
+                            // Pass the converted array to BannerSlider
+                            //                                if !appData.bannerImages.isEmpty {
+                            //                                    if isLoading{
+                            //                                        homeSliderShimmer()
+                            //                                    } else{
+                            //                                        BannerSlider(bannerSlider: appData.bannerImages)
+                            //                                            .padding(.top, -2)
+                            //                                    }
+                            //                                }
+                            //                                if !appData.productsBestseller.isEmpty {
+                            //                                    ProductsSlider(isLoading: $isLoading, products: appData.productsBestseller)
+                            //                                        .environmentObject(settings)
+                            //                                }
+                            //                                if !appData.newForYouImages.isEmpty {
+                            //                                    newForYouGifSlider(isLoading: $isLoading, arr: appData.newForYouImages)
+                            //                                        .environmentObject(settings)
+                            //                                }
                         }
-                        .refreshable {
-//                            loadData()
-                        }
-                        .coordinateSpace(name: "scroll")
-                        .background(.white)
+                        .padding(.vertical, 25)
+                        .padding(.horizontal, horizontalPadding)
+                        .background(
+                            Color(UIColor(named: "F9F9F9")!)
+                                .clipShape(
+                                    RoundedRectangle(
+                                        cornerRadius: 30,
+                                        style: .continuous
+                                    )
+                                )
+                        )
+                        .offset(y: -25)
+                        bottomShadowIgnore(count: UIDevice.current.localizedModel == "iPad" ? 7 : settings.cart_count == 0 ? 2 : 5)
                     }
-                    .onTapGesture {
-                        hideKeyboard()
+                    .refreshable {
+                        loadData()
                     }
+                    .coordinateSpace(name: "scroll")
+                }
+                .onTapGesture {
+                    hideKeyboard()
                 }
             }
         }
         .id(settings.resetNavigationID)
         .onChange(of: settings.resetNavigationID) { newID in
-//            loadData()
+            loadData()
         }
-//        .sheet(isPresented: $showOrderInfo) {
-//            OrderInfo(order: $reviewOrderData)
-//                .presentationSizingPage()
-//        }
-//        .fullScreenCover(isPresented: $showBonusInfoSheet) {
-//            ZStack {
-//                Color(.black)
-//                    .opacity(0.5)
-//                    .onTapGesture {
-//                        showBonusInfoSheet = false
-//                    }
-//                BonusInfoSheet(bonusInfo: appData.bonusInfo ?? [])
-//                    .presentationSizingPage()
-//            }
-//            .ignoresSafeArea(.all)
-//            .clearModalBackground()
-//        }
+        //        .sheet(isPresented: $showOrderInfo) {
+        //            OrderInfo(order: $reviewOrderData)
+        //                .presentationSizingPage()
+        //        }
+        //        .fullScreenCover(isPresented: $showBonusInfoSheet) {
+        //            ZStack {
+        //                Color(.black)
+        //                    .opacity(0.5)
+        //                    .onTapGesture {
+        //                        showBonusInfoSheet = false
+        //                    }
+        //                BonusInfoSheet(bonusInfo: appData.bonusInfo ?? [])
+        //                    .presentationSizingPage()
+        //            }
+        //            .ignoresSafeArea(.all)
+        //            .clearModalBackground()
+        //        }
         .transaction({ transaction in
             transaction.disablesAnimations = true
         })
@@ -106,20 +103,20 @@ struct HomeView: View {
         //                .presentationSizingPage()
         //                .clearModalBackground()
         //        }
-//        .onAppear{
-//            //            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-//            //                testIdram()
-//            //            }
-//            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-//                loadData()
-//                isLoading = false
-//            }
-//        }
-//        .overlay(showAlert ? errorDialog : nil)
-//        .onReceive(NotificationCenter.default.publisher(for: .reloadHome)) { notification in
-//            loadData()
-//        }
-//        
+        .onAppear{
+            //            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            //                testIdram()
+            //            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                loadData()
+                isLoading = false
+            }
+        }
+        //        .overlay(showAlert ? errorDialog : nil)
+        .onReceive(NotificationCenter.default.publisher(for: .reloadHome)) { notification in
+            loadData()
+        }
+        
         .navigationBarHidden(true)
     }
     private var errorDialog: some View {
@@ -127,59 +124,149 @@ struct HomeView: View {
         }
     }
     
-//    func loadData(){
-//        isLoading = true
-//        //        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-//        appData.getData { data in
-//            if let data = data {
-//                if data.status == 501{
-//                    handleLogout(settings: settings)
-//                } else{
-//                    appData.updateData(data)
-//                    DispatchQueue.main.async {
-//                        settings.cart_count = data.cart?.count ?? 0 // Update settings accordingly
-//                        UserSettings.shared.cart_count = settings.cart_count
-//                    }
-//                }
-//            } else {
-//                print("Failed to fetch app data.")
-//            }
-//            isLoading = false
-//        }
-//        userData.getUser { data in
-//            if let data = data {
-//                userData.updateUserData(data)
-//            } else {
-//                print("Failed to fetch user data.")
-//            }
-//            isLoading = false
-//        }
-//        //        }
-//        
-//        
-//        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-//            if let ongoingOrder = appData.ongoingOrder?.first {
-//                print("Timer start")
-//                startTimer(ongoingOrder.id) // Pass the ongoingOrder.id to the startTimer function
-//            } else {
-//                print("Timer error: No ongoing order found.")
-//            }
-//        }
-//    }
+    func loadData(){
+        isLoading = true
+        //        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+        appData.getData { data in
+            if let data = data {
+                if data.status == 501{
+                    handleLogout(settings: settings)
+                } else{
+                    appData.updateData(data)
+                    DispatchQueue.main.async {
+                        settings.cart_count = data.cart?.count ?? 0 // Update settings accordingly
+                        UserSettings.shared.cart_count = settings.cart_count
+                    }
+                }
+            } else {
+                print("Failed to fetch app data.")
+            }
+            isLoading = false
+        }
+        userData.getUser { data in
+            if let data = data {
+                userData.updateUserData(data)
+            } else {
+                print("Failed to fetch user data.")
+            }
+            isLoading = false
+        }
+    }
     
-//    func testIdram(){
-////        Idram test from home page
-//        IdramPaymentManager.pay(withReceiverName: "Gotcha",
-//                            receiverId: "110000639",
-//                            title: "hKHWTaxaz5am32dFAqcMfhC8U5",
-//                            amount: NSNumber(10),
-//                            hasTip: false,
-//                            callbackURLScheme: "gotcha://reorder")
-//        ShowCustomDialog("error", "Idram testing", 0, settings: settings)
-//        
-//        var paymentUrlString = "idramapp://payment/?receiverName=Gotcha&receiverId=110000639&title=hKHWTaxaz5am32dFAqcMfhC8U5&amount=10"
-////        Idram test from home page
-//    }
+    public var categoriesSlider: some View{
+        VStack(spacing: 16) {
+            HStack {
+                Text("all_categories")
+                    .font(.Lato(size: 22))
+                Spacer()
+                Button {
+                    // navigate to section list
+                } label: {
+                    Text("view_all")
+                        .font(.LatoBold(size: 15))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .foregroundStyle(.white)
+                        .background(
+                            Capsule().fill(Color(UIColor(named: "ColorPrimary")!))
+                        )
+                }
+            }
+            CategoryStrip(
+                categories: appData.categories,
+                selected: $selectedCategory
+            )
+        }
+    }
+}
+
+struct CategoryStrip: View {
+    let categories: [Category]
+    @Binding var selected: Category?
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(categories) { c in
+                    CategoryPill(
+                        title: c.name,
+                        icon: c.appImage ?? "",
+                        isSelected: selected == c
+                    )
+                    .onTapGesture {
+                        selected = (selected == c) ? nil : c
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct CategoryPill: View {
+    let title: String
+    let icon: String
+    let isSelected: Bool
+
+    var body: some View {
+        HStack(spacing: 8) {
+            WebImage(url: URL(string: icon))
+                .resizable()
+                .scaledToFit()
+                .frame(width: 26, height: 26)
+                .padding(8)
+                .background(
+                    Circle().fill(Color(UIColor(named: "F9F9F9")!))
+                )
+
+            Text(title)
+                .font(.Lato(size: 14))
+        }
+        .foregroundStyle(Color(UIColor(named: "ColorDark")!))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(
+            RoundedRectangle(cornerRadius: 50, style: .continuous)
+                .fill(isSelected ? Color(UIColor(named: "F3E6B1")!) : Color(.white))
+        )
+    }
+}
+
+
+
+struct GreetingView: View {
+    @Binding var isLoading : Bool
+    @Binding var searchText : String
+    var name: String = ""
+    var phone: String = ""
+    var horizontalPadding: CGFloat = 0
+    var settings: UserSettings
+    
+    var body: some View {
+        VStack(alignment: .leading) {
+            VStack(spacing: 24){
+                HStack{
+                    VStack(alignment: .leading) {
+                        Text("\(getLocalString(string: "hi")) \(name)")
+                            .font(.Poppins(size: 14))
+                        Text("Saryan street, 21 >")
+                            .font(.Poppins(size: 14))
+                    }
+                    Spacer()
+                    CallButton(phone: phone)
+                    CircleIcon(imageName: "ic-notifications", badgeCount: 3)
+                    
+                }
+                SearchBar(text: $searchText)
+            }
+            .padding(.bottom, 10)
+            .transition(AnyTransition.opacity.animation(.linear(duration: 0.2)))
+            
+        }
+        .padding(.top, 0)
+        .padding(.bottom, 40)
+        .padding(.horizontal, horizontalPadding)
+        .background(Color(UIColor(named: "CEF0F7")!))
+    }
 }
 
 struct ViewOffsetKey: PreferenceKey {
@@ -215,13 +302,5 @@ struct accountIcon: View {
             .clipShape(Circle())
             .overlay(Circle().stroke(Color.gray.opacity(0.4), lineWidth: 1))
         }
-    }
-}
-
-struct processingCapsule: View{
-    @Binding var active: Bool
-    var body: some View{
-        Capsule().fill(Color(UIColor(named: active ? "ColorPrimary" : "LightGray")!))
-            .frame(height: 2)
     }
 }

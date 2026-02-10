@@ -80,6 +80,14 @@ extension Font {
     static func PoppinsThinItalic(size: CGFloat) -> Font {
         .custom("Poppins-ThinItalic", size: size)
     }
+    
+    static func Lato(size: CGFloat) -> Font {
+        .custom("Lato-Regular", size: size)
+    }
+    
+    static func LatoBold(size: CGFloat) -> Font {
+        .custom("Lato-Bold", size: size)
+    }
 }
 
 extension Bundle {

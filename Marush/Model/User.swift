@@ -21,7 +21,6 @@ struct User:Codable {
     var email_notifications: String?
     var push_notifications: String?
     var notification_count: Int?
-    var bonus_total: Double // Change to Int to match the JSON data type
    
    // Computed property to get qr_phone without storing it
     var qr_phone: String {
@@ -44,13 +43,6 @@ struct User:Codable {
         image = try container.decode(String.self, forKey: .image)
         gender = try? container.decode(String.self, forKey: .gender) // Optional
         order_count = try? container.decode(Int.self, forKey: .order_count) // Optional
-        
-        // Handling bonus_total which might be a String or Int
-        if let bonusString = try? container.decode(String.self, forKey: .bonus_total) {
-            bonus_total = Double(bonusString) ?? 0 // Convert String to Int, defaulting to 0 if conversion fails
-        } else {
-            bonus_total = try container.decode(Double.self, forKey: .bonus_total) // Directly decode as Int
-        }
     }
 }
 

@@ -9,6 +9,7 @@
 import Foundation
 
 struct AppData: Codable {
+    let status: Int?
     let isLogin: Bool
     let categories: [Category]
     let productCategories: [ProductCategory]
@@ -18,6 +19,7 @@ struct AppData: Codable {
     let phone: String?
 
     enum CodingKeys: String, CodingKey {
+        case status
         case isLogin = "is_login"
         case categories
         case productCategories = "product_categories"
@@ -28,34 +30,33 @@ struct AppData: Codable {
     }
 }
 
-struct Category: Codable, Identifiable {
+struct Category: Codable, Identifiable, Equatable {
     let id: String
     let parentId: String
     let name: String
-    let display: String?
-    let position: String?
     let desc: String?
     let url: String?
     let image: String?
     let bannerImage: String?
     let count: String?
-    let metaTitle: String?
-    let metaDescription: String?
     let appImage: String?
     let categories: [Category]?
+
+    static func == (lhs: Category, rhs: Category) -> Bool {
+        lhs.id == rhs.id
+    }
 
     enum CodingKeys: String, CodingKey {
         case id
         case parentId = "parent_id"
-        case name, display, position, desc, url, image
+        case name, desc, url, image
         case bannerImage = "banner_image"
         case count
-        case metaTitle = "meta_title"
-        case metaDescription = "meta_description"
         case appImage = "app_image"
         case categories
     }
 }
+
 
 struct ProductCategory: Codable, Identifiable {
     let id: String

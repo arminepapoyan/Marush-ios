@@ -22,6 +22,8 @@
         <string>Poppins-SemiBoldItalic.ttf</string>
         <string>Poppins-Thin.ttf</string>
         <string>Poppins-ThinItalic.ttf</string>
+        <string>Lato-Regular.ttf</string>
+        <string>Lato-Bold.ttf</string>
     </array>
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>

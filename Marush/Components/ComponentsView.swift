@@ -316,3 +316,104 @@ struct QuantityChanger: View {
         }
     }
 }
+
+struct CircleIcon: View {
+
+    let imageName: String
+    var size: CGFloat = 48
+    var imageSize: CGFloat = 25
+    var backgroundColor: Color = .white
+    var badgeCount: Int? = nil
+
+    var body: some View {
+        Circle()
+            .fill(backgroundColor)
+            .frame(width: size, height: size)
+            .overlay(
+                Image(imageName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: imageSize, height: imageSize)
+            )
+            .overlay(alignment: .topTrailing) {
+                if let badge = badgeCount, badge > 0 {
+                    BadgeView(count: badge)
+                        .offset(x: 3, y: 0)
+                }
+            }
+    }
+}
+
+
+struct BadgeView: View {
+    let count: Int
+
+    var body: some View {
+        Text("\(count)")
+            .font(.PoppinsBold(size: 12))
+            .foregroundColor(.white)
+            .frame(width: 16, height: 16)
+            .background(Circle().fill(Color(UIColor(named: "ColorPrimary")!)))
+    }
+}
+
+
+struct SearchBar: View {
+    @Binding var text: String
+
+    var body: some View {
+        HStack(spacing: 10) {
+            TextField("search_for", text: $text)
+                .font(.Poppins(size: 14))
+                .foregroundColor(Color(UIColor(named: "ColorDark")!))
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+
+            if !text.isEmpty {
+                Button {
+                    text = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(Color(UIColor(named: "ColorDark")!))
+                }
+            }
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+                .foregroundColor(Color(UIColor(named: "ColorDark")!))
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 11)
+        .background(
+            RoundedRectangle(cornerRadius: 30, style: .continuous)
+                .fill(Color(.white))
+        )
+    }
+}
+
+struct CallButton: View {
+    let phone: String?
+
+    var body: some View {
+        if let phone,
+           !phone.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+
+            Button {
+                call(phone)
+            } label: {
+                CircleIcon(imageName: "ic-phone-call")
+            }
+        }
+    }
+
+    private func call(_ phone: String) {
+        let cleanPhone = phone
+            .replacingOccurrences(of: " ", with: "")
+            .replacingOccurrences(of: "-", with: "")
+
+        if let url = URL(string: "tel://\(cleanPhone)"),
+           UIApplication.shared.canOpenURL(url) {
+            UIApplication.shared.open(url)
+        }
+    }
+}
+

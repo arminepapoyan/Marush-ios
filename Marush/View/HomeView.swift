@@ -30,7 +30,52 @@ struct HomeView: View {
                     ScrollView(.vertical,showsIndicators: false){
                         GreetingView(isLoading: $isLoading, searchText: $searchText, name: userData.name, phone: appData.phone ?? "", horizontalPadding: horizontalPadding, settings: settings)
                         VStack(spacing: 20) {
-                            categoriesSlider
+                            VStack(spacing: 20){
+                                categoriesSlider
+                                if !appData.productCategories.isEmpty{
+                                    ForEach(appData.productCategories) { categoryItem in
+                                        ProductsGrid(isLoading: $isLoading, cart: appData.cart,title: categoryItem.name,products: categoryItem.products)
+                                            .environmentObject(settings)
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, horizontalPadding)
+                            BrandBenefitsCard(
+                                benefits: [
+                                    ("Natural ingredients", "ic-benefit-1"),
+                                    ("Qualified specialists", "ic-benefit-2"),
+                                    ("Professional service", "ic-benefit-3")
+                                ]
+                            )
+                            SeasonalBanner(
+                                title: "Christmas is coming 🎄🎄",
+                                buttonTitle: getLocalString(string: "view_all")
+                            )
+                            .padding(.top, -20)
+                            
+                            if !appData.productsBestseller.isEmpty{
+                                ProductsGrid(isLoading: $isLoading, cart: appData.cart, title: getLocalString(string: "bestseller"), products: appData.productsBestseller)
+                                    .environmentObject(settings)
+                                    .padding(.horizontal, horizontalPadding)
+                            }
+                            
+                            if !appData.productsBestseller.isEmpty{
+                                ProductsGrid(isLoading: $isLoading, cart: appData.cart, title: getLocalString(string: "bestseller"), products: appData.productsBestseller)
+                                    .environmentObject(settings)
+                                    .padding(.horizontal, horizontalPadding)
+                            }
+                            
+                            SubscriptionHero(
+                                titleTop: "Subscribe for your",
+                                planTitle: "Monthly",
+                                titleBottom: "sweet box!"
+                            )
+
+                            if !appData.productsNews.isEmpty{
+                                ProductsGrid(isLoading: $isLoading, cart: appData.cart, title: getLocalString(string: "new_in"), products: appData.productsNews)
+                                    .environmentObject(settings)
+                                    .padding(.horizontal, horizontalPadding)
+                            }
                             
                             // Pass the converted array to BannerSlider
                             //                                if !appData.bannerImages.isEmpty {
@@ -51,7 +96,6 @@ struct HomeView: View {
                             //                                }
                         }
                         .padding(.vertical, 25)
-                        .padding(.horizontal, horizontalPadding)
                         .background(
                             Color(UIColor(named: "F9F9F9")!)
                                 .clipShape(
@@ -155,22 +199,11 @@ struct HomeView: View {
     
     public var categoriesSlider: some View{
         VStack(spacing: 16) {
-            HStack {
-                Text("all_categories")
-                    .font(.Lato(size: 22))
-                Spacer()
-                Button {
-                    // navigate to section list
-                } label: {
-                    Text("view_all")
-                        .font(.LatoBold(size: 15))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .foregroundStyle(.white)
-                        .background(
-                            Capsule().fill(Color(UIColor(named: "ColorPrimary")!))
-                        )
-                }
+            SectionHeader(
+                title: getLocalString(string: "all_categories"),
+                fontSize: 22
+            ) {
+                print("All categories is clicked")
             }
             CategoryStrip(
                 categories: appData.categories,
@@ -179,59 +212,6 @@ struct HomeView: View {
         }
     }
 }
-
-struct CategoryStrip: View {
-    let categories: [Category]
-    @Binding var selected: Category?
-
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(categories) { c in
-                    CategoryPill(
-                        title: c.name,
-                        icon: c.appImage ?? "",
-                        isSelected: selected == c
-                    )
-                    .onTapGesture {
-                        selected = (selected == c) ? nil : c
-                    }
-                }
-            }
-        }
-    }
-}
-
-struct CategoryPill: View {
-    let title: String
-    let icon: String
-    let isSelected: Bool
-
-    var body: some View {
-        HStack(spacing: 8) {
-            WebImage(url: URL(string: icon))
-                .resizable()
-                .scaledToFit()
-                .frame(width: 26, height: 26)
-                .padding(8)
-                .background(
-                    Circle().fill(Color(UIColor(named: "F9F9F9")!))
-                )
-
-            Text(title)
-                .font(.Lato(size: 14))
-        }
-        .foregroundStyle(Color(UIColor(named: "ColorDark")!))
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
-        .background(
-            RoundedRectangle(cornerRadius: 50, style: .continuous)
-                .fill(isSelected ? Color(UIColor(named: "F3E6B1")!) : Color(.white))
-        )
-    }
-}
-
-
 
 struct GreetingView: View {
     @Binding var isLoading : Bool
@@ -268,16 +248,6 @@ struct GreetingView: View {
         .background(Color(UIColor(named: "CEF0F7")!))
     }
 }
-
-struct ViewOffsetKey: PreferenceKey {
-    typealias Value = CGFloat
-    static var defaultValue = CGFloat.zero
-    static func reduce(value: inout Value, nextValue: () -> Value) {
-        value += nextValue()
-    }
-}
-
-
 struct accountIcon: View {
     var image: String
     var settings: UserSettings
@@ -304,3 +274,300 @@ struct accountIcon: View {
         }
     }
 }
+struct CategoryStrip: View {
+    let categories: [Category]
+    @Binding var selected: Category?
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(categories) { c in
+                    CategoryPill(
+                        title: c.name,
+                        icon: c.appImage ?? "",
+                        isSelected: selected == c
+                    )
+                    .onTapGesture {
+                        selected = (selected == c) ? nil : c
+                    }
+                }
+            }
+        }
+    }
+}
+struct CategoryPill: View {
+    let title: String
+    let icon: String
+    let isSelected: Bool
+
+    var body: some View {
+        HStack(spacing: 8) {
+            WebImage(url: URL(string: icon))
+                .resizable()
+                .scaledToFit()
+                .frame(width: 26, height: 26)
+                .padding(8)
+                .background(
+                    Circle().fill(Color(UIColor(named: "F9F9F9")!))
+                )
+
+            Text(title)
+                .font(.Lato(size: 14))
+        }
+        .foregroundStyle(Color(UIColor(named: "ColorDark")!))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(
+            RoundedRectangle(cornerRadius: 50, style: .continuous)
+                .fill(isSelected ? Color(UIColor(named: "F3E6B1")!) : Color(.white))
+        )
+    }
+}
+struct BrandBenefitsCard: View {
+    let benefits: [(String, String)]
+
+    var body: some View {
+        ZStack {
+            VStack(spacing: 70) {
+                VStack(spacing: 15){
+                    Text("Pastry shop by")
+                        .font(.Lato(size: 26))
+                        .foregroundStyle(.white)
+                    
+                    Image("Marush")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 150)
+                }
+                
+                VStack(alignment: .leading, spacing: 80) {
+                    ForEach(benefits.indices, id: \.self) { i in
+                        HStack(alignment: .bottom, spacing: 10) {
+//                            Image(benefits[i].1)
+//                                .resizable()
+//                                .scaledToFit()
+//                                .frame(width: 120)
+                            AnimatedBenefitIcon(
+                                imageName: benefits[i].1,
+                                type: animationType(for: i)
+                            )
+                                .frame(width: 120)
+                            Text(benefits[i].0)
+                                .font(.LatoBold(size: 18))
+                                .foregroundStyle(.white)
+                                .padding(.leading, -50)
+                        }
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 50)
+        .padding(.bottom, 100)
+        .background(Color(UIColor(named: "ColorPrimary")!))
+    }
+    
+    private func animationType(for index: Int) -> BenefitAnimationType {
+        switch index {
+        case 0:
+            return .rotateWithPause
+        case 1:
+            return .swing180
+        case 2:
+            return .continuous
+        default:
+            return .continuous
+        }
+    }
+
+}
+struct SeasonalBanner: View {
+    let title: String
+    let buttonTitle: String
+    
+    @State private var animateImages = false
+
+    var body: some View {
+        VStack(spacing: 0) {
+            VStack(alignment: .center, spacing: 100) {
+                VStack(alignment: .center, spacing: 40) {
+                    Text(title)
+                        .font(.Lato(size: 24))
+                    
+                    ButtonView(title: buttonTitle){
+                        print("Button Clicked")
+                    }
+                    .frame(width: 160)
+                }
+                
+                seasonalBannerImages
+                    .background(
+                        GeometryReader { geo in
+                            Color.clear
+                                .onChange(of: geo.frame(in: .global).minY) { value in
+                                    
+                                    let screenHeight = UIScreen.main.bounds.height
+                                    let triggerPoint = screenHeight * 0.9
+                                    
+                                    withAnimation(.easeInOut(duration: 1.5)) {
+                                        if value < triggerPoint && value > -350 {
+                                            animateImages = true
+                                        } else {
+                                            animateImages = false
+                                        }
+                                    }
+                                }
+                        }
+                    )
+            }
+            .padding(.vertical, 80)
+            .padding(.horizontal, 35)
+        }
+        .frame(maxWidth: .infinity)
+        .background(Color.white)
+    }
+
+    
+    private var seasonalBannerImages: some View{
+        // Image Stack
+        ZStack {
+            // Back image (slides in)
+            Image("christmas1")
+                .resizable()
+                .scaledToFill()
+                .frame(width: 200 , height: 230)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .offset(x: animateImages ? -75 : 500, y: animateImages ? 180 : 0)
+                .animation(.easeInOut(duration: 1.5), value: animateImages)
+            
+            // Middle image (main)
+            Image("christmas2")
+                .resizable()
+                .scaledToFill()
+                .frame(width: animateImages ? 210 : 320, height: animateImages ? 250 : 380)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .zIndex(1)
+            
+            // Front bottom image (slides in)
+            Image("christmas3")
+                .resizable()
+                .scaledToFill()
+                .frame(width: 200 , height: 230)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .offset(x: animateImages ? 75 : 500, y: animateImages ? -180 : 0)
+                .animation(.easeInOut(duration: 1.5).delay(0.15), value: animateImages)
+        }
+        .frame(height: animateImages ? 450 : 400)
+    }
+}
+
+struct SubscriptionHero: View {
+    let titleTop: String
+    let planTitle: String
+    let titleBottom: String
+    
+    @State private var animateImages = true
+    
+    var body: some View {
+        GeometryReader { geo in
+            ZStack {
+                
+                // subscribe1 → TOP LEADING
+                Image("subscribe1")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 250)
+                    .position(
+                        x: animateImages ? 50 : 0,
+                        y: animateImages ? 100 : 50
+                    )
+                
+                // subscribe2 → BOTTOM LEADING
+                Image("subscribe2")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 180)
+                    .position(
+                        x: animateImages ? 50 : 0,
+                        y: animateImages ?  geo.size.height - 150 : geo.size.height
+                    )
+                    .animation(.easeInOut(duration: 1.5), value: animateImages)
+                
+                // subscribe3 → RIGHT CENTER
+                Image("subscribe3")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 200)
+                    .position(
+                        x: animateImages ? geo.size.width - 20 : geo.size.width,
+                        y: animateImages ?  geo.size.height - 250 : geo.size.height - 200
+                    )
+                    .offset(x: -10)
+                
+                
+                // Content
+                VStack(spacing: 30) {
+                    
+                    Text(titleTop)
+                        .font(.Lato(size: 38))
+                        .foregroundColor(Color(UIColor(named: "ColorDark")!))
+                        .multilineTextAlignment(.center)
+                    
+                    Text(planTitle)
+                        .font(.LatoBold(size: 20))
+                        .foregroundColor(Color(UIColor(named: "F3E6B1")!))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(UIColor(named: "ColorPrimary")!))
+                        )
+                    
+                    Text(titleBottom)
+                        .font(.Lato(size: 38))
+                        .foregroundColor(Color(UIColor(named: "ColorDark")!))
+                        .multilineTextAlignment(.center)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.white)
+            .clipped()
+            .background(
+                GeometryReader { geo in
+                    Color.clear
+                        .onChange(of: geo.frame(in: .global).minY) { value in
+                            
+                            let screenHeight = UIScreen.main.bounds.height
+                            let triggerPoint = screenHeight * 0.9
+                            
+                            withAnimation(.easeInOut(duration: 1.5)) {
+                                if value < triggerPoint && value > -350 {
+                                    animateImages = true
+                                } else {
+                                    animateImages = false
+                                }
+                            }
+                        }
+                }
+            )
+        }
+        .frame(height: UIScreen.main.bounds.height * 4/5)
+    }
+}
+
+
+
+//#Preview {
+//    SubscriptionHero(
+//        titleTop: "Enjoy Unlimited",
+//        planTitle: "PREMIUM PLAN",
+//        titleBottom: "Fresh Flowers"
+//    )
+//}
+//struct ViewOffsetKey: PreferenceKey {
+//    typealias Value = CGFloat
+//    static var defaultValue = CGFloat.zero
+//    static func reduce(value: inout Value, nextValue: () -> Value) {
+//        value += nextValue()
+//    }
+//}

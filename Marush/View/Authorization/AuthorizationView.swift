@@ -17,6 +17,7 @@ struct AuthorizationView: View {
     let horizontalPadding = GlobalSettings.shared.horizontalPadding
     
     @State private var goToLogin = false
+    @State private var goToRegister = false
     
     var body: some View {
         
@@ -42,12 +43,11 @@ struct AuthorizationView: View {
                     VStack(spacing: 16) {
                         // Login button
                         ButtonView(title: getLocalString(string: "login"), style: .outline) {
-                            print("Login tapped")
                             goToLogin = true
                         }
                         // Register button
                         ButtonView(title: getLocalString(string: "register")) {
-                            print("Register tapped")
+                            goToRegister = true
                         }
                     }
                 }
@@ -55,6 +55,9 @@ struct AuthorizationView: View {
             }
             .navigationDestination(isPresented: $goToLogin) {
                 LoginView()
+            }
+            .navigationDestination(isPresented: $goToRegister) {
+                RegisterView()
             }
         }
     }

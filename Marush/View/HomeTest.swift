@@ -49,43 +49,35 @@ struct HomeTestView: View {
 
                         VStack(spacing: 18) {
                             ForEach(filteredSections) { section in
-                                SectionBlock(
-                                    title: section.title,
-                                    viewAllTitle: section.viewAllTitle
-                                ) {
-                                    productGrid(products: section.products)
-                                }
+//                                SectionBlock(
+//                                    title: section.title,
+//                                    viewAllTitle: section.viewAllTitle
+//                                ) {
+//                                    productGrid(products: section.products)
+//                                }
                             }
 
                             // Red brand block (like your screenshot)
-                            BrandBenefitsCard(
-                                brand: "MARRUSH",
-                                benefits: [
-                                    ("Natural ingredients", "leaf"),
-                                    ("Qualified specialists", "checkmark.seal"),
-                                    ("Professional service", "person.2.badge.gearshape")
-                                ]
-                            )
-                            .padding(.horizontal, 16)
+//                            BrandBenefitsCard(
+//                                brand: "MARRUSH",
+//                                benefits: [
+//                                    ("Natural ingredients", "leaf"),
+//                                    ("Qualified specialists", "checkmark.seal"),
+//                                    ("Professional service", "person.2.badge.gearshape")
+//                                ]
+//                            )
+//                            .padding(.horizontal, 16)
 
                             // Christmas banner + CTA
-                            SeasonalBanner(
-                                title: "Christmas is coming 🎄🎄",
-                                buttonTitle: "View all"
-                            )
-                            .padding(.horizontal, 16)
+//                            SeasonalBanner(
+//                                title: "Christmas is coming 🎄🎄",
+//                                buttonTitle: "View all"
+//                            )
+//                            .padding(.horizontal, 16)
 
                             // Big image banner
                             BigImageBanner(imageName: "banner_1")
                                 .padding(.horizontal, 16)
-
-                            // More sections below banner (already in mock)
-                            // Subscription card (like your screenshot)
-                            SubscriptionCard(
-                                title: "Subscribe for your\nsweet box!",
-                                planTitle: "Monthly"
-                            )
-                            .padding(.horizontal, 16)
 
                             Spacer(minLength: 30)
                         }
@@ -134,28 +126,28 @@ struct HomeTestView: View {
         .padding(.horizontal, 16)
     }
 
-    private func productGrid(products: [Product1]) -> some View {
-        let cols = [
-            GridItem(.flexible(), spacing: 12),
-            GridItem(.flexible(), spacing: 12)
-        ]
-
-        return LazyVGrid(columns: cols, spacing: 12) {
-            ForEach(products) { product in
-                ProductCard(
-                    product: product,
-                    count: Binding(
-                        get: { cart[product.id] ?? 0 },
-                        set: { cart[product.id] = $0 }
-                    ),
-                    onToggleFavorite: { toggled in
-                        toggleFavorite(productID: product.id, isFav: toggled)
-                    }
-                )
-            }
-        }
-        .padding(.horizontal, 16)
-    }
+//    private func productGrid(products: [Product1]) -> some View {
+//        let cols = [
+//            GridItem(.flexible(), spacing: 12),
+//            GridItem(.flexible(), spacing: 12)
+//        ]
+//
+//        return LazyVGrid(columns: cols, spacing: 12) {
+//            ForEach(products) { product in
+//                ProductCard(
+//                    product: product,
+//                    count: Binding(
+//                        get: { cart[product.id] ?? 0 },
+//                        set: { cart[product.id] = $0 }
+//                    ),
+//                    onToggleFavorite: { toggled in
+//                        toggleFavorite(productID: product.id, isFav: toggled)
+//                    }
+//                )
+//            }
+//        }
+//        .padding(.horizontal, 16)
+//    }
 
     private var filteredSections: [HomeSection] {
         let q = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
@@ -206,130 +198,130 @@ struct HomeSection: Identifiable, Hashable {
 }
 
 // MARK: - Components
-struct SectionBlock<Content: View>: View {
-    let title: String
-    let viewAllTitle: String
-    @ViewBuilder let content: Content
+//struct SectionBlock<Content: View>: View {
+//    let title: String
+//    let viewAllTitle: String
+//    @ViewBuilder let content: Content
+//
+//    var body: some View {
+//        VStack(spacing: 12) {
+//            HStack {
+//                Text(title)
+//                    .font(.headline.weight(.semibold))
+//                Spacer()
+//                Button {
+//                    // navigate to section list
+//                } label: {
+//                    Text(viewAllTitle)
+//                        .font(.caption.weight(.semibold))
+//                        .foregroundStyle(.white)
+//                        .padding(.horizontal, 10)
+//                        .padding(.vertical, 7)
+//                        .background(
+//                            Capsule().fill(Color.red)
+//                        )
+//                }
+//            }
+//            .padding(.horizontal, 16)
+//
+//            content
+//        }
+//    }
+//}
 
-    var body: some View {
-        VStack(spacing: 12) {
-            HStack {
-                Text(title)
-                    .font(.headline.weight(.semibold))
-                Spacer()
-                Button {
-                    // navigate to section list
-                } label: {
-                    Text(viewAllTitle)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 7)
-                        .background(
-                            Capsule().fill(Color.red)
-                        )
-                }
-            }
-            .padding(.horizontal, 16)
-
-            content
-        }
-    }
-}
-
-struct ProductCard: View {
-    @State var product: Product1
-    @Binding var count: Int
-
-    var onToggleFavorite: (Bool) -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            ZStack(alignment: .topTrailing) {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color(red: 0.73, green: 0.07, blue: 0.16)) // deep red like screenshot
-                    .frame(height: 150)
-                    .overlay(
-                        Image(product.imageName)
-                            .resizable()
-                            .scaledToFit()
-                            .padding(12)
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-
-                Button {
-                    product.isFavorite.toggle()
-                    onToggleFavorite(product.isFavorite)
-                } label: {
-                    ZStack {
-                        Circle()
-                            .fill(Color.white.opacity(0.95))
-                            .frame(width: 30, height: 30)
-                        Image(systemName: product.isFavorite ? "heart.fill" : "heart")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(product.isFavorite ? Color.red : Color.black)
-                    }
-                }
-                .padding(10)
-            }
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(product.title)
-                    .font(.subheadline.weight(.semibold))
-                    .lineLimit(1)
-
-                Text(product.subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-
-            HStack(alignment: .firstTextBaseline) {
-                Text(priceText(product.price))
-                    .font(.subheadline.weight(.semibold))
-
-                if let old = product.oldPrice, old > product.price {
-                    Text(priceText(old))
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .strikethrough()
-                }
-
-                Spacer()
-            }
-
-            HStack(spacing: 10) {
-                if count == 0 {
-                    Button {
-                        count = 1
-                    } label: {
-                        Text("Add")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(Capsule().fill(Color.black))
-                    }
-                } else {
-                    StepperControl(count: $count)
-                }
-
-                Spacer(minLength: 0)
-            }
-        }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color(.systemBackground))
-                .shadow(color: .black.opacity(0.06), radius: 12, x: 0, y: 6)
-        )
-    }
-
-    private func priceText(_ value: Double) -> String {
-        // If you want AMD formatting, replace with NumberFormatter
-        String(format: "%.0f ֏", value)
-    }
-}
+//struct ProductCard: View {
+//    @State var product: Product1
+//    @Binding var count: Int
+//
+//    var onToggleFavorite: (Bool) -> Void
+//
+//    var body: some View {
+//        VStack(alignment: .leading, spacing: 10) {
+//            ZStack(alignment: .topTrailing) {
+//                RoundedRectangle(cornerRadius: 16, style: .continuous)
+//                    .fill(Color(red: 0.73, green: 0.07, blue: 0.16)) // deep red like screenshot
+//                    .frame(height: 150)
+//                    .overlay(
+//                        Image(product.imageName)
+//                            .resizable()
+//                            .scaledToFit()
+//                            .padding(12)
+//                    )
+//                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+//
+//                Button {
+//                    product.isFavorite.toggle()
+//                    onToggleFavorite(product.isFavorite)
+//                } label: {
+//                    ZStack {
+//                        Circle()
+//                            .fill(Color.white.opacity(0.95))
+//                            .frame(width: 30, height: 30)
+//                        Image(systemName: product.isFavorite ? "heart.fill" : "heart")
+//                            .font(.system(size: 14, weight: .semibold))
+//                            .foregroundStyle(product.isFavorite ? Color.red : Color.black)
+//                    }
+//                }
+//                .padding(10)
+//            }
+//
+//            VStack(alignment: .leading, spacing: 4) {
+//                Text(product.title)
+//                    .font(.subheadline.weight(.semibold))
+//                    .lineLimit(1)
+//
+//                Text(product.subtitle)
+//                    .font(.caption)
+//                    .foregroundStyle(.secondary)
+//                    .lineLimit(1)
+//            }
+//
+//            HStack(alignment: .firstTextBaseline) {
+//                Text(priceText(product.price))
+//                    .font(.subheadline.weight(.semibold))
+//
+//                if let old = product.oldPrice, old > product.price {
+//                    Text(priceText(old))
+//                        .font(.caption.weight(.semibold))
+//                        .foregroundStyle(.secondary)
+//                        .strikethrough()
+//                }
+//
+//                Spacer()
+//            }
+//
+//            HStack(spacing: 10) {
+//                if count == 0 {
+//                    Button {
+//                        count = 1
+//                    } label: {
+//                        Text("Add")
+//                            .font(.caption.weight(.semibold))
+//                            .foregroundStyle(.white)
+//                            .padding(.horizontal, 12)
+//                            .padding(.vertical, 8)
+//                            .background(Capsule().fill(Color.black))
+//                    }
+//                } else {
+//                    StepperControl(count: $count)
+//                }
+//
+//                Spacer(minLength: 0)
+//            }
+//        }
+//        .padding(12)
+//        .background(
+//            RoundedRectangle(cornerRadius: 18, style: .continuous)
+//                .fill(Color(.systemBackground))
+//                .shadow(color: .black.opacity(0.06), radius: 12, x: 0, y: 6)
+//        )
+//    }
+//
+//    private func priceText(_ value: Double) -> String {
+//        // If you want AMD formatting, replace with NumberFormatter
+//        String(format: "%.0f ֏", value)
+//    }
+//}
 
 struct StepperControl: View {
     @Binding var count: Int
@@ -368,78 +360,9 @@ struct StepperControl: View {
     }
 }
 
-struct BrandBenefitsCard: View {
-    let brand: String
-    let benefits: [(String, String)] // (title, sfSymbol)
 
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(Color(red: 0.74, green: 0.03, blue: 0.16))
 
-            VStack(spacing: 14) {
-                Text("Pastry shop by")
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.85))
 
-                Text(brand)
-                    .font(.title2.weight(.black))
-                    .foregroundStyle(.white)
-
-                VStack(alignment: .leading, spacing: 10) {
-                    ForEach(benefits.indices, id: \.self) { i in
-                        HStack(spacing: 10) {
-                            Image(systemName: benefits[i].1)
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(.white)
-                                .frame(width: 26)
-                            Text(benefits[i].0)
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.white)
-                        }
-                    }
-                }
-                .padding(.top, 4)
-            }
-            .padding(18)
-        }
-        .frame(height: 210)
-    }
-}
-
-struct SeasonalBanner: View {
-    let title: String
-    let buttonTitle: String
-
-    var body: some View {
-        ZStack(alignment: .bottomLeading) {
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
-
-            VStack(alignment: .leading, spacing: 10) {
-                Text(title)
-                    .font(.headline.weight(.semibold))
-
-                Button {
-                    // action
-                } label: {
-                    HStack(spacing: 8) {
-                        Text(buttonTitle)
-                            .font(.caption.weight(.semibold))
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 12, weight: .bold))
-                    }
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 9)
-                    .background(Capsule().fill(Color.black))
-                }
-            }
-            .padding(16)
-        }
-        .frame(height: 120)
-    }
-}
 
 struct BigImageBanner: View {
     let imageName: String
@@ -460,33 +383,6 @@ struct BigImageBanner: View {
     }
 }
 
-struct SubscriptionCard: View {
-    let title: String
-    let planTitle: String
-
-    var body: some View {
-        ZStack(alignment: .center) {
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(Color(.systemBackground))
-                .shadow(color: .black.opacity(0.06), radius: 12, x: 0, y: 6)
-
-            VStack(spacing: 12) {
-                Text(title)
-                    .font(.title3.weight(.semibold))
-                    .multilineTextAlignment(.center)
-
-                Text(planTitle)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(Capsule().fill(Color.red))
-            }
-            .padding(18)
-        }
-        .frame(height: 210)
-    }
-}
 
 struct BottomTabBar: View {
     var body: some View {

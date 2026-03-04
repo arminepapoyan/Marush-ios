@@ -96,7 +96,7 @@ struct Product: Codable, Identifiable {
     let hasDiscount: Int
     let cartStep: Int
     let cartMin: Int
-    let cartId: Int
+    let cartId: IntOrString
     let cartCount: Int
     let inWishlist: Bool
     let outOfStock: Bool
@@ -144,13 +144,76 @@ struct ProductGroup: Codable, Identifiable {
     }
 }
 
+//struct CartResponse: Codable {
+//    let status: Int
+//    let list: [CartItem]
+//    let count: Int
+//}
+//struct CartItem: Codable {
+//    let productId: String?
+//    let count: Int?
+//}
+
 struct CartResponse: Codable {
     let status: Int
+    let dbId: String?
     let list: [CartItem]
     let count: Int
-}
-struct CartItem: Codable {
-    let productId: String
-    let count: Int
+    
+    let productsTotal: Double
+    let shippingTotal: Double
+    let packagingTotal: Double
+    let couponTotal: Double
+    let total: Double
+    
+    let userBonusTotal: Double
+    let usedBonusTotal: Double
+    let bonusTotal: Double
+    let bonusConverted: Double
+    let bonusConvertedString: String?
+    let bonusPercent: Double
+    
+    let checkoutUrl: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case status
+        case dbId = "db_id"
+        case list
+        case count
+        case productsTotal = "products_total"
+        case shippingTotal = "shipping_total"
+        case packagingTotal = "packaging_total"
+        case couponTotal = "coupon_total"
+        case total
+        case userBonusTotal = "user_bonus_total"
+        case usedBonusTotal = "used_bonus_total"
+        case bonusTotal = "bonus_total"
+        case bonusConverted = "bonus_converted"
+        case bonusConvertedString = "bonus_converted_string"
+        case bonusPercent = "bonus_percent"
+        case checkoutUrl = "checkout_url"
+    }
 }
 
+struct CartItem: Codable, Identifiable {
+    var id: String { cartId }
+    let cartId: String
+    let productId: String
+    let count: Int
+    let product: Product
+    let realPrice: Double
+    let price: Double
+    let oldPrice: Double
+    let outOfStock: Bool
+    
+    enum CodingKeys: String, CodingKey {
+        case cartId = "cart_id"
+        case productId = "product_id"
+        case count
+        case product
+        case realPrice = "real_price"
+        case price
+        case oldPrice = "old_price"
+        case outOfStock = "out_of_stock"
+    }
+}

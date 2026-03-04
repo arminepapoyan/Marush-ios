@@ -15,6 +15,8 @@
 		351308512F2CE609001BDE7F /* FirebaseAnalyticsIdentitySupport in Frameworks */ = {isa = PBXBuildFile; productRef = 351308502F2CE609001BDE7F /* FirebaseAnalyticsIdentitySupport */; };
 		351308532F2CE70C001BDE7F /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 351308522F2CE70C001BDE7F /* FirebaseMessaging */; };
 		354744AF2F2E6AB8002BCFA5 /* PhoneNumberKit in Frameworks */ = {isa = PBXBuildFile; productRef = 354744AE2F2E6AB8002BCFA5 /* PhoneNumberKit */; };
+		35DE8D202F3C92F800806915 /* Shimmer in Frameworks */ = {isa = PBXBuildFile; productRef = 35DE8D1F2F3C92F800806915 /* Shimmer */; };
+		35DE8D232F3C934000806915 /* ShimmerView in Frameworks */ = {isa = PBXBuildFile; productRef = 35DE8D222F3C934000806915 /* ShimmerView */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -49,8 +51,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				351308532F2CE70C001BDE7F /* FirebaseMessaging in Frameworks */,
+				35DE8D232F3C934000806915 /* ShimmerView in Frameworks */,
 				354744AF2F2E6AB8002BCFA5 /* PhoneNumberKit in Frameworks */,
 				351308512F2CE609001BDE7F /* FirebaseAnalyticsIdentitySupport in Frameworks */,
+				35DE8D202F3C92F800806915 /* Shimmer in Frameworks */,
 				351307DB2F2CDD5B001BDE7F /* SDWebImageSwiftUI in Frameworks */,
 				351308492F2CE609001BDE7F /* FirebaseAI in Frameworks */,
 				3513084D2F2CE609001BDE7F /* FirebaseAnalytics in Frameworks */,
@@ -106,6 +110,8 @@
 				351308502F2CE609001BDE7F /* FirebaseAnalyticsIdentitySupport */,
 				351308522F2CE70C001BDE7F /* FirebaseMessaging */,
 				354744AE2F2E6AB8002BCFA5 /* PhoneNumberKit */,
+				35DE8D1F2F3C92F800806915 /* Shimmer */,
+				35DE8D222F3C934000806915 /* ShimmerView */,
 			);
 			productName = Marush;
 			productReference = 351307912F2CCE4B001BDE7F /* Marush.app */;
@@ -141,6 +147,8 @@
 				351307D92F2CDD5B001BDE7F /* XCRemoteSwiftPackageReference "SDWebImageSwiftUI" */,
 				351308472F2CE609001BDE7F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				354744AD2F2E6AB8002BCFA5 /* XCRemoteSwiftPackageReference "PhoneNumberKit" */,
+				35DE8D1E2F3C92F800806915 /* XCRemoteSwiftPackageReference "SwiftUI-Shimmer" */,
+				35DE8D212F3C934000806915 /* XCRemoteSwiftPackageReference "ShimmerView" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 351307922F2CCE4B001BDE7F /* Products */;
@@ -427,6 +435,22 @@
 				minimumVersion = 4.2.4;
 			};
 		};
+		35DE8D1E2F3C92F800806915 /* XCRemoteSwiftPackageReference "SwiftUI-Shimmer" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/markiv/SwiftUI-Shimmer";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.5.1;
+			};
+		};
+		35DE8D212F3C934000806915 /* XCRemoteSwiftPackageReference "ShimmerView" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Vidhyadharan-Mohanram/ShimmerView";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.1.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -469,6 +493,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 354744AD2F2E6AB8002BCFA5 /* XCRemoteSwiftPackageReference "PhoneNumberKit" */;
 			productName = PhoneNumberKit;
+		};
+		35DE8D1F2F3C92F800806915 /* Shimmer */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 35DE8D1E2F3C92F800806915 /* XCRemoteSwiftPackageReference "SwiftUI-Shimmer" */;
+			productName = Shimmer;
+		};
+		35DE8D222F3C934000806915 /* ShimmerView */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 35DE8D212F3C934000806915 /* XCRemoteSwiftPackageReference "ShimmerView" */;
+			productName = ShimmerView;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

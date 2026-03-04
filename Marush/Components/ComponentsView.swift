@@ -223,7 +223,7 @@ struct inputLabel: View{
     var body: some View{
         Text("\(label)")
             .font(.PoppinsMedium(size: 14))
-            .foregroundColor(Color(UIColor(named: "0F182D")!))
+            .foregroundColor(Color(UIColor(named: "ColorDark")!))
     }
 }
 
@@ -417,3 +417,20 @@ struct CallButton: View {
     }
 }
 
+struct SectionHeader: View {
+    var title: String
+    var fontSize: CGFloat = 22
+    var buttonTitle: String = getLocalString(string: "view_all")
+    var action: () -> Void
+    
+    var body: some View {
+        HStack {
+            Text(title)
+                .font(.Lato(size: fontSize))
+            Spacer()
+            LabelButton(title: buttonTitle) {
+                action()
+            }
+        }
+    }
+}

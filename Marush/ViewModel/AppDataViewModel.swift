@@ -12,6 +12,7 @@ class AppDataViewModel: ObservableObject {
     
     @Published var status: Int = 200
     @Published var isLogin: Bool = true
+    @Published var productCategories: [ProductCategory] = []
     @Published var productsBestseller: [Product] = []
     @Published var productsNews: [Product] = []
     @Published var categories: [Category] = []
@@ -47,6 +48,7 @@ class AppDataViewModel: ObservableObject {
         DispatchQueue.main.async {
             self.status = data.status ?? 200
             self.isLogin = data.isLogin ?? false
+            self.productCategories = data.productCategories ?? []
             self.productsBestseller = data.productsBestseller ?? []
             self.productsNews = data.productsNews ?? []
             self.categories = data.categories ?? []

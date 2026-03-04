@@ -17,6 +17,11 @@ struct ButtonView: View {
     var height: CGFloat
     var cornerRadius: CGFloat
     
+    var backgroundColorOverride: Color?
+    var showArrow: Bool
+    var isFullWidth: Bool
+
+    
     /// Full control initializer
     init(
         showLoading: Binding<Bool>,
@@ -25,6 +30,9 @@ struct ButtonView: View {
         style: ButtonViewStyle = .filled,
         height: CGFloat = 56,
         cornerRadius: CGFloat = 30,
+        backgroundColorOverride: Color? = nil,
+        showArrow: Bool = true,
+        isFullWidth: Bool = true,
         action: @escaping () -> Void
     ) {
         self._showLoading = showLoading
@@ -33,15 +41,20 @@ struct ButtonView: View {
         self.style = style
         self.height = height
         self.cornerRadius = cornerRadius
+        self.backgroundColorOverride = backgroundColorOverride
+        self.showArrow = showArrow
+        self.isFullWidth = isFullWidth
         self.action = action
     }
-    
     /// Default initializer (showLoading & isDisabled = false)
     init(
         title: String,
         style: ButtonViewStyle = .filled,
         height: CGFloat = 56,
         cornerRadius: CGFloat = 30,
+        backgroundColorOverride: Color? = nil,
+        showArrow: Bool = true,
+        isFullWidth: Bool = true,
         action: @escaping () -> Void
     ) {
         self._showLoading = .constant(false)
@@ -50,9 +63,11 @@ struct ButtonView: View {
         self.style = style
         self.height = height
         self.cornerRadius = cornerRadius
+        self.backgroundColorOverride = backgroundColorOverride
+        self.showArrow = showArrow
+        self.isFullWidth = isFullWidth
         self.action = action
     }
-    
     
     private var darkColor: Color {
         Color(UIColor(named: "ColorDark")!)
@@ -79,21 +94,22 @@ struct ButtonView: View {
                         Text(title)
                             .font(.PoppinsMedium(size: 16))
                             .foregroundColor(textColor)
-                        
-                        Image(
-                            isDisabled
-                            ? "ic-chevron-right-gray"
-                            : (style == .filled
-                               ? "ic-chevron-right"
-                               : "ic-chevron-right-dark")
-                        )
+                        if showArrow {
+                            Image(
+                                isDisabled
+                                ? "ic-chevron-right-gray"
+                                : (style == .filled
+                                   ? "ic-chevron-right"
+                                   : "ic-chevron-right-dark")
+                            )
+                        }
                         
                         Spacer()
                     }
                 }
             }
             .frame(height: height)
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: isFullWidth ? .infinity : nil)
             .background(backgroundBackground)
             .overlay(backgroundOverlay)
             .cornerRadius(cornerRadius)
@@ -114,16 +130,15 @@ struct ButtonView: View {
         Group {
             if isDisabled {
                 disabledColor.opacity(0.1)
-            } else{
-                
-                if style == .filled {
-                    darkColor
-                } else {
-                    Color.clear
-                }
+            } else if style == .filled {
+                backgroundColorOverride ?? darkColor
+            } else {
+                Color.clear
             }
         }
     }
+
+
     
     private var backgroundOverlay: some View {
         Group {
@@ -135,17 +150,37 @@ struct ButtonView: View {
     }
 }
 
+struct LabelButton: View {
+    
+    var title: String
+    var backgroundColor: Color = Color(UIColor(named: "ColorPrimary")!)
+    var textColor: Color = .white
+    var horizontalPadding: CGFloat = 12
+    var verticalPadding: CGFloat = 8
+    var action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.LatoBold(size: 15))
+                .foregroundStyle(textColor)
+                .padding(.horizontal, horizontalPadding)
+                .padding(.vertical, verticalPadding)
+                .background(
+                    Capsule().fill(backgroundColor)
+                )
+        }
+    }
+}
+
 
 struct ButtonViewConfirmation: View {
-    
     @Binding var showLoading: Bool
     @Binding  var isDisabled: Bool
     @Binding  var showConfirm: Bool
     
     var title: String
     var action: () -> Void
-   
-    
     var backgroundColor: Color = .black
     var textColor: Color = .white
     var cornerRadius: CGFloat = 28

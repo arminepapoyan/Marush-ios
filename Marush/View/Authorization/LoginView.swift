@@ -36,8 +36,14 @@ struct LoginView: View {
              ZStack{
                  GeometryReader { geometry in
                      ZStack{
-//                         ScrollView(showIndicators: false) {
+                         if settings.isLogined {
+                             MainView()
+                                 .environmentObject(settings)
+                         } else{
                              loginView
+                         }
+//                         ScrollView(showIndicators: false) {
+                             
 //                         }
 //                         .scrollDismissesKeyboard(.interactively)
 //                         .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 0) }

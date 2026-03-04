@@ -78,6 +78,11 @@ struct TabContent: View {
                     .environmentObject(settings)
             }
         }
+        .onChange(of: settings.selection) { newValue in
+            if newValue == 3 {
+                handleLogout(settings: settings)
+            }
+        }
         
 //        VStack(spacing: 0){
 //            TabView(selection: $settings.selection) {

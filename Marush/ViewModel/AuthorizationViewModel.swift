@@ -45,40 +45,40 @@ func sendRegisterCode(data: Registration, completion: @escaping (Message?) -> Vo
     }
 }
 
-//func updateUserData(data: UpdateUser, completion: @escaping (Message?) -> Void) {
-//    let url = NetworkManager.shared.constructURL(endpoint: "user/edit")
-//    let body: [String: Any] = [
-//        "token": getAccountToken(),
-//        "device_id": getDeviceId(),
-//        "name": data.name,
-//        "lastname": data.lastname,
-//        "email": data.email,
-//        "date_of_birth": data.date_of_birth,
-//        "gender": data.gender,
-//        "from_app": "ios"
-//    ]
-//    
-//    NetworkManager.shared.performRequest(url: url, body: body){ (result: Message?) in
-//        completion(result)
-//    }
-//}
-//
-//func updateUserPassword(data: UpdateUserPassword, completion: @escaping (Message?) -> Void) {
-//    let url = NetworkManager.shared.constructURL(endpoint: "user/editPassword")
-//    let body: [String: Any] = [
-//        "token": getAccountToken(),
-//        "device_id": getDeviceId(),
-//        "current_password": data.current_password,
-//        "new_password": data.new_password,
-//        "repeat_password": data.repeat_password,
-//        "from_app": "ios"
-//    ]
-//    
-//    NetworkManager.shared.performRequest(url: url, body: body){ (result: Message?) in
-//        completion(result)
-//    }
-//}
-//
+func updateUserData(data: UpdateUser, completion: @escaping (Message?) -> Void) {
+    let url = NetworkManager.shared.constructURL(endpoint: "user/edit")
+    let body: [String: Any] = [
+        "token": getAccountToken(),
+        "device_id": getDeviceId(),
+        "name": data.name,
+        "lastname": data.lastname,
+        "email": data.email,
+        "date_of_birth": data.date_of_birth,
+        "gender": data.gender,
+        "from_app": "ios"
+    ]
+    
+    NetworkManager.shared.performRequest(url: url, body: body){ (result: Message?) in
+        completion(result)
+    }
+}
+
+func updateUserPassword(data: UpdateUserPassword, completion: @escaping (Message?) -> Void) {
+    let url = NetworkManager.shared.constructURL(endpoint: "user/editPassword")
+    let body: [String: Any] = [
+        "token": getAccountToken(),
+        "device_id": getDeviceId(),
+        "current_password": data.current_password,
+        "new_password": data.new_password,
+        "repeat_password": data.repeat_password,
+        "from_app": "ios"
+    ]
+    
+    NetworkManager.shared.performRequest(url: url, body: body){ (result: Message?) in
+        completion(result)
+    }
+}
+
 func forgetPassword(data: ForgotPassword, completion: @escaping (Message?) -> Void) {
     let url = NetworkManager.shared.constructURL(endpoint: "user/forgetPassword")
     let body: [String: Any] = [

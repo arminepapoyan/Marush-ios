@@ -66,6 +66,7 @@
 "entrance" = "Entrance";
 "floor" = "Floor";
 "delivery_address" = "Delivery address";
+"delivery_addresses" = "Delivery addresses";
 "choose_time_between" = "Choose time between %@ and %@";
 "order_available_times_text" = "Available times from %@ to %@";
 "next" = "Next";
@@ -149,6 +150,7 @@
 "your_cart_is_empty" = "Your cart is empty";
 "your_cart_is_empty_go_back_to_thi_list_od_products" = "Your shopping cart is empty, go back to the list of products and select the desired product.";
 "shop" = "Shop";
+"shops" = "Shops";
 "subtotal" = "Subtotal";
 "discount" = "Discount";
 "total" = "Total";
@@ -195,3 +197,9 @@
 "dram_sign" = "֏";
 "bestseller" = "Bestseller";
 "new_in" = "New in Marush";
+"all_categories" = "All categories";
+"composition" = "Composition";
+"category" = "Category";
+"add" = "Add";
+"amd" = "AMD";
+"configs" = "Configs";

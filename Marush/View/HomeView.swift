@@ -20,6 +20,8 @@ struct HomeView: View {
     @State private var selectedCategory: Category? = nil
     @State private var searchText = ""
     
+    @State private var showAllCategories = false
+    
     var body: some View {
         NavigationView{
             ZStack(alignment: .top) {
@@ -28,7 +30,17 @@ struct HomeView: View {
                     .ignoresSafeArea(edges: .top)
                 VStack(spacing: 0){
                     ScrollView(.vertical,showsIndicators: false){
-                        GreetingView(isLoading: $isLoading, searchText: $searchText, name: userData.name, phone: appData.phone ?? "", horizontalPadding: horizontalPadding, settings: settings)
+                        GreetingView(
+                            isLoading: $isLoading,
+                            searchText: $searchText,
+                            name: userData.name,
+                            phone: appData.phone ?? "",
+                            horizontalPadding: horizontalPadding,
+                            settings: settings,
+                            context: .home
+                        )
+                        .environmentObject(userData)
+                        .environmentObject(appData)
                         VStack(spacing: 20) {
                             VStack(spacing: 20){
                                 categoriesSlider
@@ -122,6 +134,16 @@ struct HomeView: View {
         .onChange(of: settings.resetNavigationID) { newID in
             loadData()
         }
+        .sheet(isPresented: $showAllCategories) {
+            AllCategoriesSheet(categories: appData.categories) { category in
+                selectedCategory = category
+                withAnimation{
+                    showAllCategories = false
+                }
+            }
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+        }
         //        .sheet(isPresented: $showOrderInfo) {
         //            OrderInfo(order: $reviewOrderData)
         //                .presentationSizingPage()
@@ -197,13 +219,13 @@ struct HomeView: View {
         }
     }
     
-    public var categoriesSlider: some View{
+    private var categoriesSlider: some View{
         VStack(spacing: 16) {
             SectionHeader(
                 title: getLocalString(string: "all_categories"),
-                fontSize: 22
+                fontSize: 20
             ) {
-                print("All categories is clicked")
+                showAllCategories = true
             }
             CategoryStrip(
                 categories: appData.categories,
@@ -213,41 +235,6 @@ struct HomeView: View {
     }
 }
 
-struct GreetingView: View {
-    @Binding var isLoading : Bool
-    @Binding var searchText : String
-    var name: String = ""
-    var phone: String = ""
-    var horizontalPadding: CGFloat = 0
-    var settings: UserSettings
-    
-    var body: some View {
-        VStack(alignment: .leading) {
-            VStack(spacing: 24){
-                HStack{
-                    VStack(alignment: .leading) {
-                        Text("\(getLocalString(string: "hi")) \(name)")
-                            .font(.Poppins(size: 14))
-                        Text("Saryan street, 21 >")
-                            .font(.Poppins(size: 14))
-                    }
-                    Spacer()
-                    CallButton(phone: phone)
-                    CircleIcon(imageName: "ic-notifications", badgeCount: 3)
-                    
-                }
-                SearchBar(text: $searchText)
-            }
-            .padding(.bottom, 10)
-            .transition(AnyTransition.opacity.animation(.linear(duration: 0.2)))
-            
-        }
-        .padding(.top, 0)
-        .padding(.bottom, 40)
-        .padding(.horizontal, horizontalPadding)
-        .background(Color(UIColor(named: "CEF0F7")!))
-    }
-}
 struct accountIcon: View {
     var image: String
     var settings: UserSettings

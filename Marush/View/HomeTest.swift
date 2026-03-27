@@ -42,10 +42,10 @@ struct HomeTestView: View {
                     VStack(spacing: 16) {
                         header
 
-                        SearchBar(text: $searchText)
-                            .padding(.horizontal, 16)
+//                        SearchBar(text: $searchText)
+//                            .padding(.horizontal, 16)
 
-                        .padding(.horizontal, 16)
+//                        .padding(.horizontal, 16)
 
                         VStack(spacing: 18) {
                             ForEach(filteredSections) { section in

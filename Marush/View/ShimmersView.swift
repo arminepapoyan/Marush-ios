@@ -162,7 +162,7 @@ struct productDetailImageShimmer: View{
         VStack{
             RoundedRectangle(cornerRadius: 15)
                 .fill(Color(UIColor(named: "ColorShimmer")!))
-                .frame(height: 200)
+                .frame(height: 360)
                 .frame(maxWidth: .infinity)
         }
         .shimmering()

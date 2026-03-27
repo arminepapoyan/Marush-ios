@@ -9,7 +9,7 @@ import SwiftUI
 import Combine
 
 func getLang() -> String {
-    guard let lang = UserDefaults.standard.string(forKey: "lang") else { return Lang.english.rawValue}
+    guard let lang = UserDefaults.standard.string(forKey: "lang") else { return Lang.armenian.rawValue}
     return lang;
 }
 

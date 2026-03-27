@@ -162,7 +162,7 @@ struct LabelButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.LatoBold(size: 15))
+                .font(.LatoBold(size: 12))
                 .foregroundStyle(textColor)
                 .padding(.horizontal, horizontalPadding)
                 .padding(.vertical, verticalPadding)
@@ -181,7 +181,7 @@ struct ButtonViewConfirmation: View {
     
     var title: String
     var action: () -> Void
-    var backgroundColor: Color = .black
+    var backgroundColor: Color = Color(UIColor(named: "ColorDark")!)
     var textColor: Color = .white
     var cornerRadius: CGFloat = 28
     var paddingVertical: CGFloat = 13
@@ -207,7 +207,8 @@ struct ButtonViewConfirmation: View {
             }
         }
         .foregroundColor(textColor)
-        .padding(.vertical, paddingVertical)
+//        .padding(.vertical, paddingVertical)
+        .frame(height: 56)
         .background(backgroundColor.opacity(isDisabled ? 0.5 : 1))
         .cornerRadius(cornerRadius)
         .shadow(color: Color.gray.opacity(shadowOpacity), radius: 10)

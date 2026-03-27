@@ -74,14 +74,38 @@ struct TabContent: View {
                 title: getLocalString(string: "my_profile"),
                 icon: "ic-profile"
             ) {
-                HomeView()
-                    .environmentObject(settings)
+                AccountView()
+                .environmentObject(settings)
+                .environmentObject(userData)
+                .environmentObject(appData)
             }
         }
         .onChange(of: settings.selection) { newValue in
-            if newValue == 3 {
+            if newValue == 2 {
                 handleLogout(settings: settings)
             }
+        }
+        .sheet(isPresented: Binding(
+            get: { settings.showProductDialog || settings.showCartDialog },
+            set: { value in
+                if !value {
+                    settings.showProductDialog = false
+                    settings.showCartDialog = false
+                }
+            }
+        )) {
+            if settings.showProductDialog {
+                ProductDetailView(productId: settings.dialogProducId)
+                    .environmentObject(settings)
+                    .presentationSizingPage()
+                    .presentationDragIndicator(.visible)
+            }
+//            else if settings.showCartDialog {
+//                CartView()
+//                    .environmentObject(settings)
+//                    .environmentObject(userData)
+//                    .presentationSizingPage()
+//            }
         }
         
 //        VStack(spacing: 0){

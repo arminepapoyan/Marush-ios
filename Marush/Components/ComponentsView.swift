@@ -297,8 +297,8 @@ struct QuantityChanger: View {
                     quantity -= 1
                 }
             }) {
-                Image(systemName: "minus.circle")
-                    .font(.system(size: 24))
+                Image(systemName: "minus")
+                    .font(.system(size: 20))
                     .foregroundColor(.black)
             }
             
@@ -309,11 +309,17 @@ struct QuantityChanger: View {
             Button(action: {
                 quantity += 1
             }) {
-                Image(systemName: "plus.circle")
-                    .font(.system(size: 24))
+                Image(systemName: "plus")
+                    .font(.system(size: 20))
                     .foregroundColor(.black)
             }
         }
+        .frame(height: 56)
+        .padding(.horizontal, 20)
+        .background(
+            Capsule()
+                .fill(Color(UIColor(named: "F9F9F9")!))
+        )
     }
 }
 
@@ -357,9 +363,10 @@ struct BadgeView: View {
     }
 }
 
-
 struct SearchBar: View {
     @Binding var text: String
+    var isFocused: FocusState<Bool>.Binding
+    var isEditable: Bool = true
 
     var body: some View {
         HStack(spacing: 10) {
@@ -368,8 +375,10 @@ struct SearchBar: View {
                 .foregroundColor(Color(UIColor(named: "ColorDark")!))
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
+                .focused(isFocused)
+                .disabled(!isEditable)
 
-            if !text.isEmpty {
+            if !text.isEmpty && isEditable {
                 Button {
                     text = ""
                 } label: {
@@ -377,9 +386,9 @@ struct SearchBar: View {
                         .foregroundStyle(Color(UIColor(named: "ColorDark")!))
                 }
             }
+
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.secondary)
-                .foregroundColor(Color(UIColor(named: "ColorDark")!))
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 11)
@@ -419,7 +428,7 @@ struct CallButton: View {
 
 struct SectionHeader: View {
     var title: String
-    var fontSize: CGFloat = 22
+    var fontSize: CGFloat = 20
     var buttonTitle: String = getLocalString(string: "view_all")
     var action: () -> Void
     

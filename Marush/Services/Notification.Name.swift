@@ -10,6 +10,7 @@ import Foundation
 extension Notification.Name {
     static let orderPayed = Notification.Name("OrderPayedNotification")
     static let reloadHome = Notification.Name("ReloadHomeNotification")
+    static let reloadSearchView = Notification.Name("ReloadSearchViewNotification")
     static let reloadSavedCards = Notification.Name("ReloadSavedCardsNotification")
     static let cartCountChange = Notification.Name("CardCountChangeNotification")
 }

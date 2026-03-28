@@ -54,6 +54,7 @@ class AppDataViewModel: ObservableObject {
             self.categories = data.categories ?? []
             self.cart = data.cart
             self.phone = data.phone ?? ""
+            CartManager.shared.load(from: data.cart)
         }
     }
 }

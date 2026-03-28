@@ -107,6 +107,35 @@ struct CartResponse: Codable {
         case bonusPercent = "bonus_percent"
         case checkoutUrl = "checkout_url"
     }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        status = try container.decode(Int.self, forKey: .status)
+        dbId = try container.decodeIfPresent(String.self, forKey: .dbId)
+        count = try container.decodeIfPresent(Int.self, forKey: .count) ?? 0
+        
+        // Safe decode for list: if it's not an array, fallback to empty
+        if let listArray = try? container.decode([CartItem].self, forKey: .list) {
+            list = listArray
+        } else {
+            list = []
+        }
+        
+        productsTotal = try container.decodeIfPresent(Double.self, forKey: .productsTotal) ?? 0
+        shippingTotal = try container.decodeIfPresent(Double.self, forKey: .shippingTotal) ?? 0
+        packagingTotal = try container.decodeIfPresent(Double.self, forKey: .packagingTotal) ?? 0
+        couponTotal = try container.decodeIfPresent(Double.self, forKey: .couponTotal) ?? 0
+        total = try container.decodeIfPresent(Double.self, forKey: .total) ?? 0
+        
+        userBonusTotal = try container.decodeIfPresent(Double.self, forKey: .userBonusTotal) ?? 0
+        usedBonusTotal = try container.decodeIfPresent(Double.self, forKey: .usedBonusTotal) ?? 0
+        bonusTotal = try container.decodeIfPresent(Double.self, forKey: .bonusTotal) ?? 0
+        bonusConverted = try container.decodeIfPresent(Double.self, forKey: .bonusConverted) ?? 0
+        bonusConvertedString = try container.decodeIfPresent(String.self, forKey: .bonusConvertedString)
+        bonusPercent = try container.decodeIfPresent(Double.self, forKey: .bonusPercent) ?? 0
+        checkoutUrl = try container.decodeIfPresent(String.self, forKey: .checkoutUrl)
+    }
 }
 
 struct CartItem: Codable, Identifiable {

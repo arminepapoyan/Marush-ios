@@ -203,3 +203,11 @@
 "add" = "Add";
 "amd" = "AMD";
 "configs" = "Configs";
+"product_not_found" = "Product not found";
+"default" = "Default";
+"price_low_to_high" = "Price low to high";
+"price_high_to_low" = "Price high to low";
+"by_name" = "By name";
+"by_name_desc" = "By name desc";
+"filter" = "Filter";
+"what_do_you_want_to_view_first" = "What do you want to view first?";

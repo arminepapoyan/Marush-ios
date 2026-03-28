@@ -134,6 +134,14 @@ struct SearchProduct: Codable {
     }
 }
 
-struct SearchProductRequest{
-    let search: String
+struct SearchProductRequest {
+    let search: String?
+    let category_id: String?
+    let order_by: String?
+
+    init(search: String? = nil, category_id: String? = nil, order_by: String? = nil) {
+        self.search = search
+        self.category_id = category_id
+        self.order_by = order_by
+    }
 }

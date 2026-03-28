@@ -187,28 +187,32 @@ struct AddToCartSection: View {
     @Binding var price: Double
     @Binding var showAlert: Bool
     @Binding var errorMess: String
-    
-    @State private var quantity: Int = 1
-    
+
+    @ObservedObject private var cartManager = CartManager.shared
+    @State private var addQuantity: Int = 1
+
+    private var cartCount: Int {
+        cartManager.count(for: product.id)
+    }
 
     var body: some View {
-        VStack(spacing: 20){
+        VStack(spacing: 20) {
             Divider()
                 .background(Color(UIColor(named: "ColorDark")!).opacity(0.1))
             VStack(spacing: 12) {
-                HStack{
+                HStack {
                     Text(product.name)
                         .font(.LatoBold(size: 18))
                         .foregroundColor(Color(UIColor(named: "ColorDark")!))
                     Spacer()
-                    if addCartLoading{
+                    if addCartLoading {
                         ProgressView()
                             .frame(width: 16, height: 16)
                             .progressViewStyle(CircularProgressViewStyle(tint: .black))
                             .scaleEffect(1)
-                    } else{
-                        HStack(spacing: 4){
-                            Text("\(roundNumber(price * Double(quantity)))")
+                    } else {
+                        HStack(spacing: 4) {
+                            Text("\(roundNumber(price * Double(cartCount > 0 ? cartCount : addQuantity)))")
                                 .font(.LatoBold(size: 18))
                                 .foregroundColor(Color(UIColor(named: "ColorDark")!))
                             Text("amd")
@@ -217,26 +221,68 @@ struct AddToCartSection: View {
                         }
                     }
                 }
-                HStack(spacing: 16){
-                    // Quantity Controls
+
+                HStack(spacing: 16) {
                     if product.outOfStock {
                         Text("out_of_stock")
                             .font(.Lato(size: 16))
                             .foregroundColor(Color(UIColor(named: "CustomRed")!))
-                    } else{
-                        QuantityChanger(quantity: $quantity)
-                    }
-                    ButtonViewConfirmation(showLoading: $addCartLoading,  isDisabled: product.outOfStock ? .constant(true) : $addToCartDisabled, showConfirm: $addCartConfirm, title: getLocalString(string: "add")) {
-                        addCartLoading = true
-                        AddToCart(data: ProductAddToCart(productID: product.id, count: quantity)) { response in
-                            if response?.status == 200{
-                                addCartConfirm = true
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                                    addCartConfirm = false
+                    } else if cartCount > 0 {
+                        // Already in cart — show inline stepper
+                        HStack(spacing: 12) {
+                            Button {
+                                let newCount = cartCount - 1
+                                CartManager.shared.setCount(newCount, for: product.id)
+                                AddToCart(data: ProductAddToCart(productID: product.id, count: newCount)) { _ in }
+                            } label: {
+                                Image(systemName: "minus")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .frame(width: 30)
+                                    .foregroundColor(Color(UIColor(named: "ColorDark")!))
+                            }
+
+                            Text("\(cartCount)")
+                                .font(.LatoBold(size: 16))
+                                .frame(minWidth: 30, alignment: .center)
+
+                            Button {
+                                let newCount = cartCount + 1
+                                CartManager.shared.setCount(newCount, for: product.id)
+                                AddToCart(data: ProductAddToCart(productID: product.id, count: newCount)) { _ in }
+                            } label: {
+                                Image(systemName: "plus")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .frame(width: 30)
+                                    .foregroundColor(Color(UIColor(named: "ColorDark")!))
+                            }
+                        }
+                        .frame(height: 44)
+                        .padding(.horizontal, 8)
+                        .background(Color.white)
+                        .cornerRadius(8)
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(UIColor(named: "ColorDark")!).opacity(0.15), lineWidth: 1))
+                    } else {
+                        // Not in cart yet — show quantity picker + Add button
+                        QuantityChanger(quantity: $addQuantity)
+                        ButtonViewConfirmation(
+                            showLoading: $addCartLoading,
+                            isDisabled: $addToCartDisabled,
+                            showConfirm: $addCartConfirm,
+                            title: getLocalString(string: "add")
+                        ) {
+                            addCartLoading = true
+                            AddToCart(data: ProductAddToCart(productID: product.id, count: addQuantity)) { response in
+                                addCartLoading = false
+                                if response?.status == 200 {
+                                    CartManager.shared.setCount(addQuantity, for: product.id)
+                                    addCartConfirm = true
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                        addCartConfirm = false
+                                    }
+                                } else {
+                                    errorMess = getLocalString(string: "wrond_command")
+                                    showAlert = true
                                 }
-                            } else{
-                                errorMess = getLocalString(string: "wrond_command")
-                                showAlert = true
                             }
                         }
                     }
@@ -244,8 +290,8 @@ struct AddToCartSection: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.horizontal)
-            
         }
+        .animation(.easeInOut(duration: 0.2), value: cartCount)
         .padding(.horizontal, GlobalSettings.shared.horizontalPadding)
     }
 }

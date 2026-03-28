@@ -8,36 +8,34 @@
 
 import Foundation
 
-//struct CheckoutResponse: Codable {
-//    let cart: CartResponse
-//    let bonusInfo: [BonusInfo]?
-//    let relatedProducts: [Product]?
-//    let addresses: [Address]?
-//    let shops: [Shop]?
-//    let paymentMethods: [PaymentMethod]?
-//    let bonusNumbers: [Int]?
-//    let deliveryDefaultDate: String?
-//    let deliveryDefaultTime: String?
-//    let minTime: String?
-//    let maxTime: String?
-//    let disableDelivery: Bool?
-//    let cardsList: [CardsList]?
-//    
-//    enum CodingKeys: String, CodingKey {
-//        case cart
-//        case bonusInfo = "bonus_info"
-//        case relatedProducts = "related_products"
-//        case addresses, shops
-//        case paymentMethods = "payment_methods"
-//        case bonusNumbers = "bonus_numbers"
-//        case deliveryDefaultDate = "delivery_default_date"
-//        case deliveryDefaultTime = "delivery_default_time"
-//        case minTime = "min_time"
-//        case maxTime = "max_time"
-//        case disableDelivery = "disable_delivery"
-//        case cardsList = "cards"
-//    }
-//}
+struct CheckoutResponse: Codable {
+    let cart: CartResponse
+    let relatedProducts: [Product]?
+    let addresses: [Address]?
+    let shops: [Shop]?
+    let paymentMethods: [PaymentMethod]?
+    let bonusNumbers: [Int]?
+    let deliveryDefaultDate: String?
+    let deliveryDefaultTime: String?
+    let minTime: String?
+    let maxTime: String?
+    let disableDelivery: Bool?
+    let cardsList: [CardsList]?
+    
+    enum CodingKeys: String, CodingKey {
+        case cart
+        case relatedProducts = "related_products"
+        case addresses, shops
+        case paymentMethods = "payment_methods"
+        case bonusNumbers = "bonus_numbers"
+        case deliveryDefaultDate = "delivery_default_date"
+        case deliveryDefaultTime = "delivery_default_time"
+        case minTime = "min_time"
+        case maxTime = "max_time"
+        case disableDelivery = "disable_delivery"
+        case cardsList = "cards"
+    }
+}
 //
 //
 //// Root Model
@@ -72,7 +70,7 @@ import Foundation
 //        case couponTotal = "coupon_total"
 //    }
 //}
-//
+
 //// Cart Item Model
 //struct CartItem: Codable, Identifiable {
 //    let id = UUID()
@@ -136,85 +134,85 @@ struct ProductAddToCart: Codable{
     let count: Int
 }
 
-//struct Shop: Codable, Identifiable, Hashable{
-//    let id: String
-//    let name: String
-//    let address: String
-//    let image: String
-//    let hours: String
-//    let coordinates: [String]
-//    let startTime: String
-//    let endTime: String
-//    let disabled: Bool
-//    let disabledMessage: String
+struct Shop: Codable, Identifiable, Hashable{
+    let id: String
+    let name: String
+    let address: String
+    let image: String
+    let hours: String
+    let coordinates: [String]
+    let startTime: String
+    let endTime: String
+    let disabled: Bool
+    let disabledMessage: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case address
+        case image
+        case hours
+        case coordinates
+        case startTime = "start_time"
+        case endTime = "end_time"
+        case disabled
+        case disabledMessage = "disabled_message"
+    }
+    
+    static func == (lhs: Shop, rhs: Shop) -> Bool {
+        return lhs.id == rhs.id
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+}
 //
-//    enum CodingKeys: String, CodingKey {
-//        case id
-//        case name
-//        case address
-//        case image
-//        case hours
-//        case coordinates
-//        case startTime = "start_time"
-//        case endTime = "end_time"
-//        case disabled
-//        case disabledMessage = "disabled_message"
-//    }
-//    
-//    static func == (lhs: Shop, rhs: Shop) -> Bool {
-//        return lhs.id == rhs.id
-//    }
 //
-//    func hash(into hasher: inout Hasher) {
-//        hasher.combine(id)
-//    }
-//}
-//
-//
-//struct Address: Identifiable, Codable, Hashable {
-//    var id: String
-//    var title: String
-//    var address: String
-//    var building: String
-//    var apartment: String
-//    var entrance: String
-//    var floor: String
-//    var isDefault: Int
-//
-//    enum CodingKeys: String, CodingKey {
-//        case id
-//        case title
-//        case address
-//        case building
-//        case apartment
-//        case entrance
-//        case floor
-//        case isDefault = "default"
-//    }
-//    
-//    static func == (lhs: Address, rhs: Address) -> Bool {
-//        return lhs.id == rhs.id
-//    }
-//
-//    func hash(into hasher: inout Hasher) {
-//        hasher.combine(id)
-//    }
-//}
-//
-//struct PaymentMethod: Identifiable, Codable {
-//    let id = UUID() // Unique identifier for SwiftUI usage
-//    let key: String
-//    let name: String
-//    let icon: String
-//    
-//    // Custom initializer to decode JSON and map "show_title" to `showTitle`
-//    private enum CodingKeys: String, CodingKey {
-//        case key
-//        case name
-//        case icon
-//    }
-//}
-//
+struct Address: Identifiable, Codable, Hashable {
+    var id: String
+    var title: String
+    var address: String
+    var building: String
+    var apartment: String
+    var entrance: String
+    var floor: String
+    var isDefault: Int
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case address
+        case building
+        case apartment
+        case entrance
+        case floor
+        case isDefault = "default"
+    }
+    
+    static func == (lhs: Address, rhs: Address) -> Bool {
+        return lhs.id == rhs.id
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+}
+
+struct PaymentMethod: Identifiable, Codable {
+    let id = UUID() // Unique identifier for SwiftUI usage
+    let key: String
+    let name: String
+    let icon: String
+    
+    // Custom initializer to decode JSON and map "show_title" to `showTitle`
+    private enum CodingKeys: String, CodingKey {
+        case key
+        case name
+        case icon
+    }
+}
+
 //struct CheckoutRunModel{
 //    var is_delivery: Int = 0
 //    var is_asap: Int = 1
@@ -367,46 +365,70 @@ struct ProductAddToCart: Codable{
 //        case order
 //    }
 //}
-//
-//
-//struct FetchCardDataRequest{
-//    var useBonusAmount: Int?
-//    var isDelivery: Int?
-//    var isAsap: Int?
-//    var shopId: String?
-//    var coupon: String?
-//    
-//    
-//    init(
-//        useBonusAmount: Int? = 0,
-//        isDelivery: Int? = 0,
-//        isAsap: Int? = 1,
-//        shopId: String? = "0",
-//        coupon: String? = ""
-//    ) {
-//        self.useBonusAmount = useBonusAmount
-//        self.isDelivery = isDelivery
-//        self.isAsap = isAsap
-//        self.shopId = shopId
-//        self.coupon = coupon
-//    }
-//}
-//
-//struct CardsList: Codable, Identifiable{
-//    let id: Int
-//    let cardCode: String
-//    let cardName: String
-//    let expDate: String
-//    let isDefault: Bool
-//    let userName: String?
-//    
-//    
-//    private enum CodingKeys: String, CodingKey {
-//        case id
-//        case cardCode = "card_code"
-//        case cardName = "card_name"
-//        case expDate = "exp_date"
-//        case isDefault = "default"
-//        case userName = "user_name"
-//    }
-//}
+
+struct CardsList: Codable, Identifiable{
+    let id: Int
+    let cardCode: String
+    let cardName: String
+    let expDate: String
+    let isDefault: Bool
+    let userName: String?
+    
+    
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case cardCode = "card_code"
+        case cardName = "card_name"
+        case expDate = "exp_date"
+        case isDefault = "default"
+        case userName = "user_name"
+    }
+}
+
+struct FetchCardDataRequest{
+    var useBonusAmount: Int?
+    var isDelivery: Int?
+    var isAsap: Int?
+    var shopId: String?
+    var coupon: String?
+    
+    
+    init(
+        useBonusAmount: Int? = 0,
+        isDelivery: Int? = 0,
+        isAsap: Int? = 1,
+        shopId: String? = "0",
+        coupon: String? = ""
+    ) {
+        self.useBonusAmount = useBonusAmount
+        self.isDelivery = isDelivery
+        self.isAsap = isAsap
+        self.shopId = shopId
+        self.coupon = coupon
+    }
+}
+
+
+struct CheckoutRunModel{
+    var is_delivery: Int = 0
+    var is_asap: Int = 1
+    var shop_id: String = ""
+    var billing_address: String = ""
+    var billing_apartment: String = ""
+    var billing_building: String = ""
+    var billing_entrance: String = ""
+    var billing_floor: String = ""
+    var delivery_time: String = ""
+    var payment_method: String = ""
+    var use_bonus_amount: Int = 0
+    
+    var billing_name: String = ""
+    var billing_lastname: String = ""
+    var billing_email: String = ""
+    var billing_phone: String = ""
+    var billing_comment: String = ""
+    
+    var coupon: String = ""
+    var save_card: Bool = true
+    var user_card_id: Int = 0
+}

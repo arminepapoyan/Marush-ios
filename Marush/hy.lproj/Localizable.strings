@@ -199,3 +199,11 @@
 "add" = "Ավելացնել";
 "amd" = "դրամ";
 "configs" = "Կարգաբերումներ";
+"product_not_found" = "Ապրանքը չի գտնվել";
+"default" = "Նախնական";
+"price_low_to_high" = "Ըստ գնի աճման";
+"price_high_to_low" = "Ըստ գնի նվազման";
+"by_name" = "Ըստ անվանման";
+"by_name_desc" = "Ըստ անվանման հակադարձ";
+"filter" = "Ֆիլտրել";
+"what_do_you_want_to_view_first" = "Ի՞նչ եք ուզում նախ դիտել:";

@@ -11,11 +11,10 @@ import Combine
 
 class ProductsViewModel: ObservableObject {
     @Published var products: [Product] = []
-    
+
     init() {
-        self.getData(data: SearchProductRequest(search: "")) { data in
+        self.getData(data: SearchProductRequest(search: nil, category_id: nil)) { data in
             if let data = data {
-//                print("App data received: \(data)")
                 self.updateData(data)
                 print("ProductsViewModel data success")
             } else {
@@ -23,7 +22,7 @@ class ProductsViewModel: ObservableObject {
             }
         }
     }
-    
+
     // Fetch data from the API
     func getData(data: SearchProductRequest, completion: @escaping (SearchProduct?) -> Void) {
         let url = NetworkManager.shared.constructURL(endpoint: "products")
@@ -31,16 +30,38 @@ class ProductsViewModel: ObservableObject {
             "token": getAccountToken(),
             "from_app": "ios"
         ]
-        
-        if !data.search.isEmpty {
-            body["search"] = data.search
+
+        if let search = data.search, !search.isEmpty {
+            body["search"] = search
         }
-        
+        if let categoryId = data.category_id {
+            body["category_id"] = categoryId
+        }
+        if let orderBy = data.order_by {
+            body["order_by"] = orderBy
+        }
+
         NetworkManager.shared.performRequest(url: url, body: body) { (result: SearchProduct?) in
             completion(result)
         }
     }
-    
+
+    // Used by SearchView (text search, no category)
+    func loadData(search: String, completion: (() -> Void)? = nil) {
+        getData(data: SearchProductRequest(search: search.isEmpty ? nil : search)) { data in
+            if let data = data { self.updateData(data) }
+            completion?()
+        }
+    }
+
+    // Used by CategoryDetailView (category + optional sort)
+    func loadData(categoryId: String?, orderBy: String? = nil, completion: (() -> Void)? = nil) {
+        getData(data: SearchProductRequest(category_id: categoryId, order_by: orderBy)) { data in
+            if let data = data { self.updateData(data) }
+            completion?()
+        }
+    }
+
     func updateData(_ data: SearchProduct) {
         DispatchQueue.main.async {
             self.products = data.products ?? []

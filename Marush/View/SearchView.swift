@@ -16,99 +16,125 @@ struct SearchView: View {
     @EnvironmentObject var userData: UserViewModel
     @EnvironmentObject var settings: UserSettings
     @EnvironmentObject var appData: AppDataViewModel
-    
+
+    var onDismiss: (() -> Void)? = nil
+
     let horizontalPadding = GlobalSettings.shared.horizontalPadding
-    
-    @StateObject var data = ProductsViewModel()
-    
+
+    @StateObject var productsData = ProductsViewModel()
+
     @State var isLoading = true
-    
-    @State private var showAlert: Bool = false
-    @State private var errorMess: String = ""
-    
     @State private var searchText = ""
-    
+    @State private var searchTask: DispatchWorkItem? = nil
+
+    // 2-column grid layout
+    private let columns: [GridItem] = [
+        GridItem(.flexible(), spacing: 12),
+        GridItem(.flexible(), spacing: 12)
+    ]
+    private var cardWidth: CGFloat {
+        let screenWidth = UIScreen.main.bounds.width
+        let spacing: CGFloat = 12
+        return (screenWidth - horizontalPadding * 2 - spacing) / 2
+    }
+
     var body: some View {
-        NavigationView{
-            ZStack(alignment: .top) {
-                VStack(spacing: 0){
-                    ScrollView(.vertical,showsIndicators: false){
-                        GreetingView(
-                            isLoading: $isLoading,
-                            searchText: $searchText,
-                            name: userData.name,
-                            phone: appData.phone ?? "",
-                            horizontalPadding: horizontalPadding,
-                            settings: settings,
-                            context: .search,
-                            backgroundColor: Color(UIColor(named: "F9F9F9")!)
-                        )
-                        VStack(spacing: 20) {
+        ZStack(alignment: .top) {
+            Color(UIColor(named: "F9F9F9")!).ignoresSafeArea()
+            VStack(spacing: 0) {
+
+                // Fixed search header — always visible, never scrolls away
+                GreetingView(
+                    isLoading: $isLoading,
+                    searchText: $searchText,
+                    name: userData.name,
+                    phone: appData.phone ?? "",
+                    horizontalPadding: horizontalPadding,
+                    settings: settings,
+                    context: .search,
+                    backgroundColor: Color(UIColor(named: "F9F9F9")!)
+                )
+
+                // Scrollable products below the header
+                ScrollView(.vertical, showsIndicators: false) {
+                    if isLoading && productsData.products.isEmpty {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 60)
+                    } else if !isLoading && productsData.products.isEmpty {
+                        // Empty state
+                        VStack(spacing: 16) {
+                            Image(systemName: "magnifyingglass")
+                                .font(.system(size: 48, weight: .light))
+                                .foregroundColor(Color(UIColor(named: "ColorDark")!).opacity(0.25))
+                            Text(getLocalString(string: "product_not_found"))
+                                .font(.LatoBold(size: 18))
+                                .foregroundColor(Color(UIColor(named: "ColorDark")!).opacity(0.5))
+                            if !searchText.isEmpty {
+                                Text("\"\(searchText)\"")
+                                    .font(.Lato(size: 15))
+                                    .foregroundColor(Color(UIColor(named: "ColorDark")!).opacity(0.35))
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, horizontalPadding)
+                            }
                         }
-                        .padding(.vertical, 25)
-                        .background(
-                            Color(UIColor(named: "F9F9F9")!)
-                                .clipShape(
-                                    RoundedRectangle(
-                                        cornerRadius: 30,
-                                        style: .continuous
-                                    )
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 80)
+                    } else {
+                        LazyVGrid(columns: columns, spacing: 12) {
+                            ForEach(productsData.products) { product in
+                                ProductCard(
+                                    isLoading: $isLoading,
+                                    product: product,
+                                    width: cardWidth
                                 )
-                        )
-                        .offset(y: -25)
-                        bottomShadowIgnore(count: UIDevice.current.localizedModel == "iPad" ? 7 : settings.cart_count == 0 ? 2 : 5)
+                                .onTapGesture {
+                                    settings.dialogProducId = product.id
+                                    settings.showProductDialog = true
+                                }
+                            }
+                        }
+                        .padding(.horizontal, horizontalPadding)
+                        .padding(.top, 12)
+                        .padding(.bottom, 25)
                     }
-                    .refreshable {
-                        loadData()
-                    }
-                    .coordinateSpace(name: "scroll")
+                    bottomShadowIgnore(count: UIDevice.current.localizedModel == "iPad" ? 7 : settings.cart_count == 0 ? 2 : 5)
                 }
-                .onTapGesture {
-                    hideKeyboard()
+                .refreshable {
+                    runSearch(query: searchText)
                 }
+                .coordinateSpace(name: "searchScroll")
             }
         }
-        .onChange(of: settings.resetNavigationID) { newID in
-            loadData()
+        .simultaneousGesture(
+            TapGesture().onEnded { hideKeyboard() }
+        )
+        // Debounced search on every keystroke
+        .onChange(of: searchText) { newValue in
+            searchTask?.cancel()
+            let task = DispatchWorkItem {
+                isLoading = true
+                productsData.loadData(search: newValue) {
+                    isLoading = false
+                }
+            }
+            searchTask = task
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: task)
         }
-        .onAppear{
-            //            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-            //                testIdram()
-            //            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                loadData()
+        .onAppear {
+            isLoading = true
+            productsData.loadData(search: "") {
                 isLoading = false
             }
         }
-        //        .overlay(showAlert ? errorDialog : nil)
-        .onReceive(NotificationCenter.default.publisher(for: .reloadSearchView)) { notification in
-            loadData()
-        }
-        
-        .navigationBarHidden(true)
-    }
-    private var errorDialog: some View {
-        CustomDialog(isActive: $showAlert, icone_type: 0, title: getLocalString(string: "wrond_command"), message: errorMess, buttonTitle: "", padd: 50) {
+        .onReceive(NotificationCenter.default.publisher(for: .reloadSearchView)) { _ in
+            runSearch(query: searchText)
         }
     }
-    
-    func loadData(){
+
+    private func runSearch(query: String) {
         isLoading = true
-        //        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-        appData.getData { data in
-            if let data = data {
-                if data.status == 501{
-                    handleLogout(settings: settings)
-                } else{
-                    appData.updateData(data)
-                    DispatchQueue.main.async {
-                        settings.cart_count = data.cart?.count ?? 0 // Update settings accordingly
-                        UserSettings.shared.cart_count = settings.cart_count
-                    }
-                }
-            } else {
-                print("Failed to fetch app data.")
-            }
+        productsData.loadData(search: query) {
             isLoading = false
         }
     }

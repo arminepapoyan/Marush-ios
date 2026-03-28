@@ -30,11 +30,15 @@ struct TabContent: View {
         //        NavigationStack{
         let selectable = Binding(
             get: { settings.selection },
-            set: { settings.selection = $0
-                settings.resetNavigationID = UUID()
+            set: { newValue in
+                if newValue == 0 && settings.selection == 0 {
+                    // Home tab re-tapped: signal HomeView to dismiss search and reload
+                    settings.resetNavigationID = UUID()
+                }
+                settings.selection = newValue
             })
-        
-        TabView(selection: $settings.selection) {
+
+        TabView(selection: selectable) {
             TabBarItem(
                 tag: 0,
                 selection: settings.selection,
@@ -64,8 +68,10 @@ struct TabContent: View {
                 title: getLocalString(string: "my_cart"),
                 icon: "ic-cart"
             ) {
-                HomeView()
+                CartView()
                     .environmentObject(settings)
+                    .environmentObject(userData)
+                    .environmentObject(appData)
             }
 
             TabBarItem(
@@ -80,11 +86,11 @@ struct TabContent: View {
                 .environmentObject(appData)
             }
         }
-        .onChange(of: settings.selection) { newValue in
-            if newValue == 2 {
-                handleLogout(settings: settings)
-            }
-        }
+//        .onChange(of: settings.selection) { newValue in
+//            if newValue == 2 {
+//                handleLogout(settings: settings)
+//            }
+//        }
         .sheet(isPresented: Binding(
             get: { settings.showProductDialog || settings.showCartDialog },
             set: { value in

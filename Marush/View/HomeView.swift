@@ -13,132 +13,208 @@ struct HomeView: View {
     let horizontalPadding = GlobalSettings.shared.horizontalPadding
     
     @State var isLoading = true
-    
+
     @State private var showAlert: Bool = false
     @State private var errorMess: String = ""
-    
-    @State private var selectedCategory: Category? = nil
+
     @State private var searchText = ""
-    
     @State private var showAllCategories = false
-    
+
+    // Category detail
+    @State private var categoryForDetail: Category? = nil
+    @State private var showCategoryDetail = false
+
+    // Recreating the ScrollView with a new ID resets its position to 0
+    @State private var scrollViewID = UUID()
+
+    // MARK: – Helpers
+
+    /// Find the full Category model (with sub-categories) matching a ProductCategory id.
+    private func fullCategory(for productCategory: ProductCategory) -> Category? {
+        appData.categories.first(where: { $0.id == productCategory.id })
+    }
+
+    /// Open CategoryDetailView for the given Category.
+    private func openCategoryDetail(_ cat: Category) {
+        categoryForDetail = cat
+        scrollViewID = UUID()    // recreate ScrollView at position 0 so GreetingView is visible
+        withAnimation(.easeInOut(duration: 0.28)) {
+            showCategoryDetail = true
+        }
+    }
+
+    private func closeCategoryDetail() {
+        withAnimation(.easeInOut(duration: 0.28)) {
+            showCategoryDetail = false
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            categoryForDetail = nil
+        }
+    }
+
     var body: some View {
-        NavigationView{
-            ZStack(alignment: .top) {
-                Color(UIColor(named: "CEF0F7")!)
-                    .frame(height: UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0)
-                    .ignoresSafeArea(edges: .top)
-                VStack(spacing: 0){
-                    ScrollView(.vertical,showsIndicators: false){
-                        GreetingView(
-                            isLoading: $isLoading,
-                            searchText: $searchText,
-                            name: userData.name,
-                            phone: appData.phone ?? "",
-                            horizontalPadding: horizontalPadding,
-                            settings: settings,
-                            context: .home
-                        )
-                        .environmentObject(userData)
-                        .environmentObject(appData)
-                        VStack(spacing: 20) {
-                            VStack(spacing: 20){
-                                categoriesSlider
-                                if !appData.productCategories.isEmpty{
-                                    ForEach(appData.productCategories) { categoryItem in
-                                        ProductsGrid(isLoading: $isLoading, cart: appData.cart,title: categoryItem.name,products: categoryItem.products)
-                                            .environmentObject(settings)
+        NavigationView {
+            VStack(spacing: 0) {
+                // ── 1. GreetingView — always first in hierarchy, taps always work ──
+                GreetingView(
+                    isLoading: $isLoading,
+                    searchText: $searchText,
+                    name: userData.name,
+                    phone: appData.phone ?? "",
+                    horizontalPadding: horizontalPadding,
+                    settings: settings,
+                    context: .home,
+                    onSearchTap: {
+                        var t = Transaction()
+                        t.disablesAnimations = true
+                        withTransaction(t) { settings.showSearch = true }
+                    }
+                )
+                .environmentObject(userData)
+                .environmentObject(appData)
+                .background(Color(UIColor(named: "CEF0F7")!))
+
+                // ── 2. Content card — overlaps GreetingView by 30pt ──
+                // Home content and CategoryDetailView live here side by side.
+                // No z-index juggling needed — GreetingView is simply above this in the VStack.
+                ZStack(alignment: .top) {
+
+                    // Home scroll content
+                    ScrollView(.vertical, showsIndicators: false) {
+                        VStack(spacing: 0) {
+                            VStack(spacing: 20) {
+                                VStack(spacing: 20) {
+                                    categoriesSlider
+                                    if !appData.productCategories.isEmpty {
+                                        ForEach(appData.productCategories) { categoryItem in
+                                            VStack(spacing: 10) {
+                                                ProductsGrid(
+                                                    isLoading: $isLoading,
+                                                    title: categoryItem.name,
+                                                    products: categoryItem.products,
+                                                    onViewAll: {
+                                                        if let cat = fullCategory(for: categoryItem) {
+                                                            openCategoryDetail(cat)
+                                                        }
+                                                    }
+                                                )
+                                                .environmentObject(settings)
+
+                                                if let cat = fullCategory(for: categoryItem),
+                                                   let subcats = cat.categories,
+                                                   !subcats.isEmpty {
+                                                    ScrollView(.horizontal, showsIndicators: false) {
+                                                        HStack(spacing: 8) {
+                                                            ForEach(subcats) { sub in
+                                                                CategoryPill(
+                                                                    title: sub.name,
+                                                                    icon: sub.appImage ?? "",
+                                                                    isSelected: categoryForDetail?.id == sub.id && showCategoryDetail
+                                                                )
+                                                                .onTapGesture {
+                                                                    openCategoryDetail(sub)
+                                                                }
+                                                            }
+                                                        }
+                                                        .padding(.horizontal, 2)
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
                                 }
-                            }
-                            .padding(.horizontal, horizontalPadding)
-                            BrandBenefitsCard(
-                                benefits: [
-                                    ("Natural ingredients", "ic-benefit-1"),
-                                    ("Qualified specialists", "ic-benefit-2"),
-                                    ("Professional service", "ic-benefit-3")
-                                ]
-                            )
-                            SeasonalBanner(
-                                title: "Christmas is coming 🎄🎄",
-                                buttonTitle: getLocalString(string: "view_all")
-                            )
-                            .padding(.top, -20)
-                            
-                            if !appData.productsBestseller.isEmpty{
-                                ProductsGrid(isLoading: $isLoading, cart: appData.cart, title: getLocalString(string: "bestseller"), products: appData.productsBestseller)
-                                    .environmentObject(settings)
-                                    .padding(.horizontal, horizontalPadding)
-                            }
-                            
-                            if !appData.productsBestseller.isEmpty{
-                                ProductsGrid(isLoading: $isLoading, cart: appData.cart, title: getLocalString(string: "bestseller"), products: appData.productsBestseller)
-                                    .environmentObject(settings)
-                                    .padding(.horizontal, horizontalPadding)
-                            }
-                            
-                            SubscriptionHero(
-                                titleTop: "Subscribe for your",
-                                planTitle: "Monthly",
-                                titleBottom: "sweet box!"
-                            )
+                                .padding(.horizontal, horizontalPadding)
 
-                            if !appData.productsNews.isEmpty{
-                                ProductsGrid(isLoading: $isLoading, cart: appData.cart, title: getLocalString(string: "new_in"), products: appData.productsNews)
-                                    .environmentObject(settings)
-                                    .padding(.horizontal, horizontalPadding)
-                            }
-                            
-                            // Pass the converted array to BannerSlider
-                            //                                if !appData.bannerImages.isEmpty {
-                            //                                    if isLoading{
-                            //                                        homeSliderShimmer()
-                            //                                    } else{
-                            //                                        BannerSlider(bannerSlider: appData.bannerImages)
-                            //                                            .padding(.top, -2)
-                            //                                    }
-                            //                                }
-                            //                                if !appData.productsBestseller.isEmpty {
-                            //                                    ProductsSlider(isLoading: $isLoading, products: appData.productsBestseller)
-                            //                                        .environmentObject(settings)
-                            //                                }
-                            //                                if !appData.newForYouImages.isEmpty {
-                            //                                    newForYouGifSlider(isLoading: $isLoading, arr: appData.newForYouImages)
-                            //                                        .environmentObject(settings)
-                            //                                }
-                        }
-                        .padding(.vertical, 25)
-                        .background(
-                            Color(UIColor(named: "F9F9F9")!)
-                                .clipShape(
-                                    RoundedRectangle(
-                                        cornerRadius: 30,
-                                        style: .continuous
-                                    )
+                                BrandBenefitsCard(
+                                    benefits: [
+                                        ("Natural ingredients", "ic-benefit-1"),
+                                        ("Qualified specialists", "ic-benefit-2"),
+                                        ("Professional service", "ic-benefit-3")
+                                    ]
                                 )
+                                SeasonalBanner(
+                                    title: "Christmas is coming 🎄🎄",
+                                    buttonTitle: getLocalString(string: "view_all")
+                                )
+                                .padding(.top, -20)
+
+                                if !appData.productsBestseller.isEmpty {
+                                    ProductsGrid(isLoading: $isLoading, title: getLocalString(string: "bestseller"), products: appData.productsBestseller)
+                                        .environmentObject(settings)
+                                        .padding(.horizontal, horizontalPadding)
+                                }
+
+                                if !appData.productsBestseller.isEmpty {
+                                    ProductsGrid(isLoading: $isLoading, title: getLocalString(string: "bestseller"), products: appData.productsBestseller)
+                                        .environmentObject(settings)
+                                        .padding(.horizontal, horizontalPadding)
+                                }
+
+                                SubscriptionHero(
+                                    titleTop: "Subscribe for your",
+                                    planTitle: "Monthly",
+                                    titleBottom: "sweet box!"
+                                )
+
+                                if !appData.productsNews.isEmpty {
+                                    ProductsGrid(isLoading: $isLoading, title: getLocalString(string: "new_in"), products: appData.productsNews)
+                                        .environmentObject(settings)
+                                        .padding(.horizontal, horizontalPadding)
+                                }
+                            }
+                            .padding(.vertical, 25)
+
+                            bottomShadowIgnore(count: UIDevice.current.localizedModel == "iPad" ? 7 : settings.cart_count == 0 ? 2 : 5)
+                        }
+                    }
+                    .id(scrollViewID)
+                    .refreshable { loadData() }
+
+                    // CategoryDetailView slides in over home content
+                    if showCategoryDetail, let cat = categoryForDetail {
+                        CategoryDetailView(
+                            category: cat,
+                            onDismiss: { closeCategoryDetail() },
+                            onCategoryTap: { newCat in categoryForDetail = newCat }
                         )
-                        .offset(y: -25)
-                        bottomShadowIgnore(count: UIDevice.current.localizedModel == "iPad" ? 7 : settings.cart_count == 0 ? 2 : 5)
+                        .id(cat.id)
+                        .environmentObject(settings)
+                        .environmentObject(userData)
+                        .environmentObject(appData)
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .trailing),
+                            removal: .move(edge: .trailing)
+                        ))
+                        .zIndex(1)
                     }
-                    .refreshable {
-                        loadData()
-                    }
-                    .coordinateSpace(name: "scroll")
                 }
-                .onTapGesture {
-                    hideKeyboard()
-                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(UIColor(named: "F9F9F9")!))
+                .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
+                .padding(.top, -30)   // overlap GreetingView by 30pt
             }
+            .background(Color(UIColor(named: "CEF0F7")!).ignoresSafeArea())
+            .onTapGesture { hideKeyboard() }
         }
         .id(settings.resetNavigationID)
         .onChange(of: settings.resetNavigationID) { newID in
+            // Home tab was re-tapped: dismiss overlays and reload
+            var t = Transaction()
+            t.disablesAnimations = true
+            withTransaction(t) { settings.showSearch = false }
+            if showCategoryDetail {
+                showCategoryDetail = false
+                categoryForDetail = nil
+            }
             loadData()
         }
         .sheet(isPresented: $showAllCategories) {
             AllCategoriesSheet(categories: appData.categories) { category in
-                selectedCategory = category
-                withAnimation{
+                withAnimation {
                     showAllCategories = false
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                    openCategoryDetail(category)
                 }
             }
             .presentationDetents([.medium, .large])
@@ -184,6 +260,21 @@ struct HomeView: View {
         }
         
         .navigationBarHidden(true)
+        .overlay(
+            Group {
+                if settings.showSearch {
+                    SearchView(onDismiss: {
+                        var t = Transaction()
+                        t.disablesAnimations = true
+                        withTransaction(t) { settings.showSearch = false }
+                    })
+                    .environmentObject(settings)
+                    .environmentObject(userData)
+                    .environmentObject(appData)
+                    .transition(.identity)
+                }
+            }
+        )
     }
     private var errorDialog: some View {
         CustomDialog(isActive: $showAlert, icone_type: 0, title: getLocalString(string: "wrond_command"), message: errorMess, buttonTitle: "", padd: 50) {
@@ -219,7 +310,7 @@ struct HomeView: View {
         }
     }
     
-    private var categoriesSlider: some View{
+    private var categoriesSlider: some View {
         VStack(spacing: 16) {
             SectionHeader(
                 title: getLocalString(string: "all_categories"),
@@ -229,7 +320,13 @@ struct HomeView: View {
             }
             CategoryStrip(
                 categories: appData.categories,
-                selected: $selectedCategory
+                selected: Binding(
+                    get: { showCategoryDetail ? categoryForDetail : nil },
+                    set: { _ in }
+                ),
+                onCategoryTap: { cat in
+                    openCategoryDetail(cat)
+                }
             )
         }
     }
@@ -264,6 +361,8 @@ struct accountIcon: View {
 struct CategoryStrip: View {
     let categories: [Category]
     @Binding var selected: Category?
+    /// When set, tapping a pill fires this callback instead of toggling `selected`.
+    var onCategoryTap: ((Category) -> Void)? = nil
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -272,13 +371,18 @@ struct CategoryStrip: View {
                     CategoryPill(
                         title: c.name,
                         icon: c.appImage ?? "",
-                        isSelected: selected == c
+                        isSelected: selected?.id == c.id
                     )
                     .onTapGesture {
-                        selected = (selected == c) ? nil : c
+                        if let handler = onCategoryTap {
+                            handler(c)
+                        } else {
+                            selected = (selected?.id == c.id) ? nil : c
+                        }
                     }
                 }
             }
+            .padding(.horizontal, 2) // prevent pill shadow clipping
         }
     }
 }

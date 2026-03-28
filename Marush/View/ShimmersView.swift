@@ -145,13 +145,14 @@ struct productsSliderItemShimmer: View{
                 .fill(Color(UIColor(named: "ColorShimmer")!))
                 .frame(width: 50, height: 10)
         }
-        .frame(width: 120)
+//        .frame(width: 120)
+        .frame(maxWidth: .infinity)
         .frame(maxHeight: .infinity)
         .padding(10)
         .background(.white)
         .cornerRadius(11)
         .padding(1)
-        .background(RoundedRectangle(cornerRadius: 11).stroke(Color(UIColor(named: "ColorDark")!).opacity(0.6), lineWidth: 1))
+        .background(RoundedRectangle(cornerRadius: 11).stroke(Color(UIColor(named: "ColorDark")!).opacity(0.3), lineWidth: 1))
         .redacted(reason: .placeholder)
         .shimmering()
     }

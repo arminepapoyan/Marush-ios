@@ -15,34 +15,24 @@ enum GreetingContext {
 struct GreetingView: View {
     @EnvironmentObject var userData: UserViewModel
     @EnvironmentObject var appData: AppDataViewModel
-    
+
     @Binding var isLoading: Bool
     @Binding var searchText: String
-    
+
     var name: String = ""
     var phone: String = ""
     var horizontalPadding: CGFloat = 0
     var settings: UserSettings
-    
+
     var context: GreetingContext = .home
+    var onSearchTap: (() -> Void)? = nil
     @FocusState private var isSearchFocused: Bool
-    @State private var goToSearch = false
-    
+
     var backgroundColor: Color = Color(UIColor(named: "CEF0F7")!)
     var showsSearchBar: Bool = true
-    
+
     var body: some View {
         VStack(alignment: .leading) {
-            NavigationLink(
-                destination: SearchView()
-                    .environmentObject(settings)
-                    .environmentObject(userData)
-                    .environmentObject(appData),
-                isActive: $goToSearch
-            ) {
-                EmptyView()
-            }
-            
             VStack(spacing: 24) {
                 
                 HStack {
@@ -77,7 +67,7 @@ struct GreetingView: View {
         }
         .onAppear {
             if context == .search {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     isSearchFocused = true
                 }
             }
@@ -92,11 +82,9 @@ struct GreetingView: View {
     private func handleSearchTap() {
         switch context {
         case .home:
-            goToSearch = true
-            print(" goToSearch goToSearch")
+            onSearchTap?()
         case .search:
             isSearchFocused = true
-            print(" goToSearch isSearchFocused")
         }
     }
 }

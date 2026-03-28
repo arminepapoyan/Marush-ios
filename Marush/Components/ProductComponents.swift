@@ -11,11 +11,11 @@ import SDWebImageSwiftUI
 struct ProductsGrid: View {
     @EnvironmentObject var settings: UserSettings
     @Binding var isLoading: Bool
-    let cart: CartResponse?
     var title: String = ""
     var backgroundColor: UIColor = .clear
     var products: [Product] = []
     var outline: Bool = true
+    var onViewAll: (() -> Void)? = nil
     
     
     private var columns: [GridItem] {
@@ -32,7 +32,7 @@ struct ProductsGrid: View {
                 title: title,
                 fontSize: 18
             ) {
-                print("\(title) view all is clicked")
+                onViewAll?()
             }
             //            LazyVGrid(columns: columns, spacing: 12) {
             //                ForEach(products) { product in
@@ -50,7 +50,7 @@ struct ProductsGrid: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 16){
                     ForEach(products) { product in
-                        ProductCard(isLoading: $isLoading, cart: cart, product: product, outline: outline, width: cardWidth)
+                        ProductCard(isLoading: $isLoading, product: product, outline: outline, width: cardWidth)
                             .onTapGesture {
                                 settings.dialogProducId = product.id
                                 settings.showProductDialog = true
@@ -72,7 +72,6 @@ struct ProductsGrid: View {
 
 struct ProductCard: View {
     @Binding var isLoading: Bool
-    let cart: CartResponse?
     let product: Product
     var outline: Bool = true
     var width: CGFloat
@@ -99,7 +98,6 @@ struct ProductCard: View {
 //                        .padding(.bottom, 5)
                     AddToCartControl(
                         product: product,
-                        cart: cart,
                         addToCart: { product, completion in
                             AddToCart(data: ProductAddToCart(productID: product.id, count: 1)) { success in
                                 completion(success != nil)
@@ -172,13 +170,13 @@ struct ProductBadge: View {
 
 struct AddToCartControl: View {
     let product: Product
-    let cart: CartResponse?
     var addToCart: (Product, @escaping (Bool) -> Void) -> Void
     var updateQuantity: (Product, Int) -> Void
-    @State private var quantity: Int = 0
+    @ObservedObject private var cartManager = CartManager.shared
     @State private var isLoading: Bool = false
-    private var cartItem: CartItem? {
-        cart?.list.first(where: { $0.productId == product.id })
+
+    private var quantity: Int {
+        cartManager.count(for: product.id)
     }
 
     var body: some View {
@@ -189,16 +187,8 @@ struct AddToCartControl: View {
                 HStack {
                     Spacer()
                     cartButton
-                        .padding(.trailing, 10)   // 👈 10pt from right
+                        .padding(.trailing, 10)
                 }
-            }
-        }
-        .animation(.easeInOut(duration: 0.2), value: quantity)
-        .onAppear {
-            if let item = cartItem {
-                quantity = item.count
-            } else {
-                quantity = 0
             }
         }
         .animation(.easeInOut(duration: 0.2), value: quantity)
@@ -214,7 +204,7 @@ private extension AddToCartControl {
             addToCart(product) { success in
                 isLoading = false
                 if success {
-                    quantity = 1
+                    CartManager.shared.setCount(1, for: product.id)
                 }
             }
         } label: {
@@ -237,13 +227,9 @@ private extension AddToCartControl {
     var stepperView: some View {
         HStack(spacing: 12) {
             Button {
-                if quantity > 1 {
-                    quantity -= 1
-                    updateQuantity(product, quantity)
-                } else {
-                    quantity = 0
-                    updateQuantity(product, 0)
-                }
+                let newCount = quantity - 1
+                CartManager.shared.setCount(newCount, for: product.id)
+                updateQuantity(product, newCount)
             } label: {
                 Image(systemName: "minus")
                     .font(.system(size: 16, weight: .medium))
@@ -256,8 +242,9 @@ private extension AddToCartControl {
                 .frame(minWidth: 30)
 
             Button {
-                quantity += 1
-                updateQuantity(product, quantity)
+                let newCount = quantity + 1
+                CartManager.shared.setCount(newCount, for: product.id)
+                updateQuantity(product, newCount)
             } label: {
                 Image(systemName: "plus")
                     .font(.system(size: 16, weight: .medium))

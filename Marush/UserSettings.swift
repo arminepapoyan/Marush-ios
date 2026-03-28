@@ -113,6 +113,7 @@ class UserSettings: ObservableObject{
 //    @Published var reorderDefaultData: ReorderDefaultData = ReorderDefaultData()
     
     @Published var wishlistProducts: [String] = []
+    @Published var showSearch: Bool = false
     init(){
         self.isLogined = getIsLogined()
         self.isFirebaseTokenSent = getIsFirebaseTokenSent()

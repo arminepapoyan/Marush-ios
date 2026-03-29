@@ -295,7 +295,7 @@ func selectionView(title: String, items: [String], selectedItem: Binding<String>
                         .onTapGesture {
                             selectedItem.wrappedValue = item
                         }
-                    Text(item)
+                    Text(getLocalString(string: item))
                         .onTapGesture {
                             selectedItem.wrappedValue = item
                         }

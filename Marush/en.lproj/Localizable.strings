@@ -3,6 +3,7 @@
 "sign_in_to_start" = "Sign In for start";
 "email_or_phone_number" = "Email or phone number";
 "phone_number" = "Phone number";
+"phone" = "Phone number";
 "password" = "Password";
 "repeat_password" = "Repeat password";
 "old_password" = "Old password";
@@ -211,3 +212,4 @@
 "by_name_desc" = "By name desc";
 "filter" = "Filter";
 "what_do_you_want_to_view_first" = "What do you want to view first?";
+"already_have_an_account" = "Already have an account?";

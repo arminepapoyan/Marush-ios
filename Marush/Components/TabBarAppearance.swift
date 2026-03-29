@@ -31,6 +31,14 @@ extension UITabBarController {
         appearance.normal.titleTextAttributes = attributes
         appearance.selected.titleTextAttributes = attributesBold
 
+        // Badge color
+        let badgeColor = UIColor(named: "ColorPrimary") ?? UIColor.systemBlue
+        let badgeTextAttr: [NSAttributedString.Key: Any] = [.foregroundColor: UIColor.white]
+        appearance.normal.badgeBackgroundColor = badgeColor
+        appearance.selected.badgeBackgroundColor = badgeColor
+        appearance.normal.badgeTextAttributes = badgeTextAttr
+        appearance.selected.badgeTextAttributes = badgeTextAttr
+
         let tabBarAppearance = UITabBarAppearance()
         tabBarAppearance.configureWithOpaqueBackground()
         tabBarAppearance.backgroundColor = UIColor(named: "CEF0F7") ?? .white

@@ -52,7 +52,7 @@ class NetworkManager {
                 do {
                     if let responseString = String(data: apiData, encoding: .utf8) {
 //                        print("Response Data Success \(url) ")
-//                        print("Response Data Success \(url) \(responseString)")
+                        print("Response Data Success \(url) \(responseString)")
                     }
                     
                     // Use the generic type T for decoding

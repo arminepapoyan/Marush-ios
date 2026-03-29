@@ -13,7 +13,12 @@ struct PhoneInputView: View {
     @Environment(\.colorScheme) var colorScheme
     @FocusState private var keyIsFocused: Bool
     
+    @State private var didComplete = false
+    
+    var onComplete: (() -> Void)? = nil
+    
     let countries: [CountryCodes] = Bundle.main.decode("CountryNumbers.json")
+    
     
     var body: some View {
         VStack {
@@ -33,13 +38,28 @@ struct PhoneInputView: View {
                 TextField("", text: $mobPhoneNumber)
                     .font(.Poppins(size: mobPhoneNumber.isEmpty ? 16: 13))
                     .placeholder(when: mobPhoneNumber.isEmpty) {
-                        Text("Phone number")
+                        Text("phone_number")
                             .foregroundColor(.secondary)
                     }
                     .focused($keyIsFocused)
-                    .keyboardType(.numbersAndPunctuation)
+                    .keyboardType(.numberPad)
                     .onReceive(Just(mobPhoneNumber)) { _ in
                         applyPatternOnNumbers(&mobPhoneNumber, pattern: countryPattern, replacementCharacter: "#")
+                        
+                        
+                        let digits = mobPhoneNumber.replacingOccurrences(of: "[^0-9]", with: "", options: .regularExpression)
+                        let maxDigits = countryPattern.filter { $0 == "#" }.count
+                        
+                        if digits.count == maxDigits {
+                            if !didComplete {
+                                didComplete = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    onComplete?()
+                                }
+                            }
+                        } else {
+                            didComplete = false
+                        }
                     }
                     .onAppear{
                         if mobPhoneNumber != ""{
@@ -80,6 +100,10 @@ struct PhoneInputView: View {
         }
     }
     
+    func maxDigits(from pattern: String) -> Int {
+        pattern.filter { $0 == "#" }.count
+    }
+    
     // Filter countries based on search query
     var filteredCountries: [CountryCodes] {
         if searchCountry.isEmpty {
@@ -102,6 +126,14 @@ struct PhoneInputView: View {
     // Apply pattern to format phone number as per the country's pattern
     func applyPatternOnNumbers(_ stringvar: inout String, pattern: String, replacementCharacter: Character) {
         var pureNumber = stringvar.replacingOccurrences(of: "[^0-9]", with: "", options: .regularExpression)
+        
+        let maxLength = maxDigits(from: pattern)
+        
+        // 🔴 LIMIT DIGITS HERE
+        if pureNumber.count > maxLength {
+            pureNumber = String(pureNumber.prefix(maxLength))
+        }
+
         for index in 0 ..< pattern.count {
             guard index < pureNumber.count else {
                 stringvar = pureNumber
@@ -112,8 +144,10 @@ struct PhoneInputView: View {
             guard patternCharacter != replacementCharacter else { continue }
             pureNumber.insert(patternCharacter, at: pureNumber.index(pureNumber.startIndex, offsetBy: index))
         }
+
         stringvar = pureNumber
     }
+    
     
     func parsePhoneNumber(_ fullPhoneNumber: String) {
         // Extract only numbers from the input

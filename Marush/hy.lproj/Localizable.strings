@@ -3,6 +3,7 @@
 "sign_in_to_start" = "Մուտք գործեք սկսելու համար";
 "email_or_phone_number" = "Էլ. հասցե կամ հեռախոսահամար";
 "phone_number" = "Հեռախոսահամար";
+"phone" = "Հեռախոսահամար";
 "password" = "Գաղտնաբառ";
 "repeat_password" = "Կրկնել գաղտնաբառը";
 "old_password" = "Հին գաղտնաբառ";
@@ -207,3 +208,4 @@
 "by_name_desc" = "Ըստ անվանման հակադարձ";
 "filter" = "Ֆիլտրել";
 "what_do_you_want_to_view_first" = "Ի՞նչ եք ուզում նախ դիտել:";
+"already_have_an_account" = "Արդեն ունե՞ք հաշիվ";

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import PhoneNumberKit
 
 struct LoginView: View {
     @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
@@ -29,7 +30,16 @@ struct LoginView: View {
     @State private var signin_loading: Bool = false
     @State private var showLoginView: Bool = false
     
+    @State private var phoneNumber = ""
+    @State private var phone_user = ""
+    @State var countryCode: String = "+374"
+    @State var wrongphone: Bool = false
+    @State var wrongphoneMessage: String = ""
+    let phoneNumberKit = PhoneNumberUtility()
+    @State private var phoneField: PhoneNumberTextFieldView?
+    
     let horizontalPadding = GlobalSettings.shared.horizontalPadding
+    @FocusState private var focusedField: FocusFields?
     
     var body: some View {
          NavigationStack {
@@ -61,8 +71,19 @@ struct LoginView: View {
             VStack(spacing: 24){
                 headerSection
                 VStack(spacing: 12){
-                    emailInput
+//                    emailInput
+                    phoneInput
+                        .focused($focusedField, equals: .phone)
+                            .submitLabel(.next)
+                            .onSubmit {
+                                focusedField = .password
+                            }
                     passwordInput
+                        .focused($focusedField, equals: .password)
+                            .submitLabel(.done)
+                            .onSubmit {
+                                focusedField = nil
+                            }
                     forgotPasswordButton
                 }
             }
@@ -103,6 +124,48 @@ struct LoginView: View {
             showLabel: true
         )
         .padding(.bottom, 5)
+    }
+    
+    private var phoneInput: some View {
+        VStack(alignment: .leading, spacing: 4){
+            inputLabel(label: getLocalString(string: "phone_number"))
+            PhoneInputView(
+                presentSheet: false,
+                countryCode: $countryCode,
+                mobPhoneNumber: $phoneNumber,
+                countryFlag: "🇦🇲",
+                countryPattern: "## ######",
+                countryLimit: 300,
+                onComplete: {
+                    focusedField = .password
+                }
+            )
+                .frame(height: 50)
+                .background(Color.white)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 30)
+                        .stroke(Color(UIColor(named: "CustomGray")!), lineWidth: 1)
+                )
+                .padding(2)
+                .overlay(alignment: .trailing){
+                    wrongphone ?
+                    VStack(alignment: .trailing) {
+                        Image(systemName: "exclamationmark.circle.fill")
+                            .font(.system(size: 20))
+                            .padding(.trailing, 8)
+                    }
+                    : nil
+                }
+                .cornerRadius(15)
+            
+            if wrongphone{
+                Text(wrongphone ? wrongphoneMessage : "")
+                    .font(.system(size: 15))
+                    .foregroundColor(Color(UIColor(named: "CustomRed")!))
+                    .multilineTextAlignment(.leading)
+                    .padding(.leading, 15)
+            }
+        }
     }
     
     private var passwordInput: some View {
@@ -154,19 +217,45 @@ struct LoginView: View {
         signin_loading = true
         
         var error_form = false
-        if email.isEmpty {
-            wrongEmail = 2
+//        if email.isEmpty {
+//            wrongEmail = 2
+//            error_form = true
+//        } else {
+//            wrongEmail = 0
+//        }
+//
+        
+        if phoneNumber.isEmpty {
+            wrongphoneMessage = getLocalString(string: "phone_field_is_required")
+            wrongphone = true
             error_form = true
         } else {
-            wrongEmail = 0
+            wrongphone = false
         }
-      
+        
         if password.isEmpty {
             wrongPassword = 2
             error_form = true
         } else {
             wrongPassword = 0
         }
+        
+        phoneNumber =  phoneNumber.trimmingAllSpaces()
+        phone_user = "\(countryCode)\(phoneNumber)".trimmingAllSpaces()
+        
+        self.phoneField = PhoneNumberTextFieldView(phoneNumber: .constant(phone_user))
+        do {
+            self.phoneField?.getCurrentText()
+            let validatedPhoneNumber = try phoneNumberKit.parse(phone_user)
+            
+            // Integrate with your login/registration system here...
+        }
+        catch {
+            error_form = true
+            wrongphone = true
+            wrongphoneMessage = getLocalString(string: "phone_number_is_wrong")
+        }
+        
         
         if error_form {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
@@ -178,7 +267,7 @@ struct LoginView: View {
         errorPassword = false
         errorEmail = false
         
-        login(email: email, password: password) { response in
+        login(phone: phone_user, password: password) { response in
             signin_loading = false
             if response?.status == 200 {
                 settings.account_uid = response?.token ?? ""
@@ -191,6 +280,11 @@ struct LoginView: View {
                     errorPassword = true
                     errorPasswordMessage = response?.errors?.password ?? ""
                 }
+                if response?.errors?.phone != nil {
+                    wrongphone = true
+                    wrongphoneMessage = response?.errors?.phone ?? ""
+                }
+                
                 if response?.errors?.email != nil {
                     errorEmail = true
                     errorEmailMessage = response?.errors?.email ?? ""

@@ -53,6 +53,20 @@ class CartViewModel: ObservableObject {
         }
     }
     
+    /// Reloads cart data from the server and updates published properties.
+    /// Call on view appear or pull-to-refresh.
+    func reload() {
+        getData { [weak self] data in
+            DispatchQueue.main.async {
+                if let data = data {
+                    self?.updateData(data)
+                } else {
+                    self?.errorMessage = "Failed to retrieve cart data"
+                }
+            }
+        }
+    }
+
     /// Updates the cart data
     /// - Parameter data: A `CheckoutResponse` object containing the updated cart data
     private func updateData(_ data: CheckoutResponse) {

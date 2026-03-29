@@ -18,6 +18,8 @@ struct TabContent: View {
     @EnvironmentObject var userData: UserViewModel
     @EnvironmentObject var globalSettings: GlobalSettings
     @EnvironmentObject var appData: AppDataViewModel
+
+    @ObservedObject private var cartManager = CartManager.shared
 //    @State private var selection = 0
     @State private var resetNavigationID = UUID()
     
@@ -66,7 +68,8 @@ struct TabContent: View {
                 tag: 2,
                 selection: settings.selection,
                 title: getLocalString(string: "my_cart"),
-                icon: "ic-cart"
+                icon: "ic-cart",
+                badge: cartManager.items.count
             ) {
                 CartView()
                     .environmentObject(settings)

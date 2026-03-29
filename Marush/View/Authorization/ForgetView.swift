@@ -63,6 +63,7 @@ struct ForgetView: View {
                         titleText
                         if showData {
                             dataView
+                                .padding(.top, 20)
                         } else if showCode {
                             codeView
                         } else if showPassword {
@@ -100,7 +101,7 @@ struct ForgetView: View {
     // Sign In Section
     private var signInSection: some View {
         HStack{
-            Text("Already have an account?")
+            Text("already_have_an_account")
                 .font(.PoppinsMedium(size: 16))
                 .foregroundColor(Color(UIColor(named: "ColorDark")!).opacity(0.8))
             NavigationLink(destination: LoginView()) {

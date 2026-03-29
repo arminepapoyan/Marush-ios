@@ -12,6 +12,7 @@ struct TabBarItem<Content: View>: View {
     let selection: Int
     let title: String
     let icon: String
+    var badge: Int = 0
     let content: Content
 
     init(
@@ -19,12 +20,14 @@ struct TabBarItem<Content: View>: View {
         selection: Int,
         title: String,
         icon: String,
+        badge: Int = 0,
         @ViewBuilder content: () -> Content
     ) {
         self.tag = tag
         self.selection = selection
         self.title = title
         self.icon = icon
+        self.badge = badge
         self.content = content()
     }
 
@@ -56,7 +59,7 @@ struct TabBarItem<Content: View>: View {
                     .font(textFont)
                     .foregroundColor(textColor)
             }
-           
+            .badge(badge > 0 ? badge : 0)
             .tag(tag)
     }
 }

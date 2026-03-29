@@ -89,6 +89,7 @@ struct RegisterView: View {
     @State var wrongcode  = 0
     
     let horizontalPadding = GlobalSettings.shared.horizontalPadding
+    @FocusState private var focusedField: FocusFields?
     
     var body: some View {
         NavigationStack {
@@ -259,12 +260,42 @@ struct RegisterView: View {
     private var registrationForm: some View {
         VStack(alignment: .leading, spacing: 12) {
             inputField(placeholder: getLocalString(string: "name"), text: $name, showErrorImg: $wrongname, errorMess: $wrongnameMessage, isSecure: false, showLabel: true)
+                .focused($focusedField, equals: .name)
+                .submitLabel(.next)
+                .onSubmit {
+                    focusedField = .lastname
+                }
             inputField(placeholder: getLocalString(string: "lastname"), text: $lastname, showErrorImg: $wronglastname,  errorMess: $wronglastnameMessage, isSecure: false, showLabel: true)
+                .focused($focusedField, equals: .lastname)
+                .submitLabel(.next)
+                .onSubmit {
+                    focusedField = .email
+                }
             emailInput
+                .focused($focusedField, equals: .email)
+                .submitLabel(.next)
+                .onSubmit {
+                    focusedField = .phone
+                }
             phoneInput
+                .focused($focusedField, equals: .phone)
+                .submitLabel(.next)
+                .onSubmit {
+                    focusedField = .password
+                }
 //            birthdayInputHelper
             inputField(placeholder: getLocalString(string: "password"), text: $password, showErrorImg: $wrongpassword, errorMess: $wrongpasswordMessage, isSecure: true, showLabel: true)
+                .focused($focusedField, equals: .password)
+                .submitLabel(.next)
+                .onSubmit {
+                    focusedField = .repeatPassword
+                }
             inputField(placeholder: getLocalString(string: "repeat_password"), text: $repeatpassword, showErrorImg: $wrongrepeatpassword, errorMess: $wrongrepeatpasswordMessage, isSecure: true, showLabel: true)
+                .focused($focusedField, equals: .repeatPassword)
+                .submitLabel(.done)
+                .onSubmit {
+                    focusedField = nil
+                }
 //            genderSelection
             verificationMethodSelection
         }
@@ -302,7 +333,17 @@ struct RegisterView: View {
     private var phoneInput: some View {
         VStack(alignment: .leading, spacing: 4){
             inputLabel(label: getLocalString(string: "phone_number"))
-            PhoneInputView(presentSheet: false, countryCode: $countryCode, mobPhoneNumber: $phoneNumber, countryFlag: "🇦🇲", countryPattern: "## ######", countryLimit: 300)
+            PhoneInputView(
+                presentSheet: false,
+                countryCode: $countryCode,
+                mobPhoneNumber: $phoneNumber,
+                countryFlag: "🇦🇲",
+                countryPattern: "## ######",
+                countryLimit: 300,
+                onComplete: {
+                    focusedField = .password
+                }
+            )
                 .frame(height: 50)
                 .background(Color.white)
                 .overlay(
@@ -410,7 +451,7 @@ struct RegisterView: View {
     // Sign In Section
     private var signInSection: some View {
         HStack{
-            Text("Already have an account?")
+            Text("already_have_an_account")
                 .font(.PoppinsMedium(size: 16))
                 .foregroundColor(Color(UIColor(named: "ColorDark")!).opacity(0.8))
             NavigationLink(destination: LoginView()) {
@@ -620,16 +661,16 @@ struct RegisterView: View {
         sendRegisterCode(data: Registration(name: name, lastname: lastname, email: email, phone: phone_user, code_type: verificationMethod, code: code, password: password, repeat_password: repeatpassword)){ response in
             actionBtnLoading = false
             if(response?.status == 200){
-                print("sendRegisterCode final response is success \(response)")
-//                if let token = response?.token, !token.isEmpty {
-//                    settings.account_uid = token
-//                    settings.isLogined = true
-//                    presentationMode.wrappedValue.dismiss()
-//                    settings.resetNavigationID = UUID()
-//                } else {
-//                    errorMess = "Unknown error occurred"
-//                    showAlert = true
-//                }
+//                print("sendRegisterCode final response is success \(response)")
+                if let token = response?.token, !token.isEmpty {
+                    settings.account_uid = token
+                    settings.isLogined = true
+                    presentationMode.wrappedValue.dismiss()
+                    settings.resetNavigationID = UUID()
+                } else {
+                    errorMess = "Unknown error occurred"
+                    showAlert = true
+                }
             } else {
                 errorMess = response?.message ?? "Unknown error occurred"
                 if (response?.errors?.code != nil){

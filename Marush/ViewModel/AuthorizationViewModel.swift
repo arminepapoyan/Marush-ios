@@ -9,11 +9,12 @@ import Foundation
 
 // MARK: - API Functions
 // Login user
-func login(email: String, password: String, completion: @escaping (Message?) -> Void) {
+func login(phone: String, password: String, completion: @escaping (Message?) -> Void) {
     let url = NetworkManager.shared.constructURL(endpoint: "login/run")
     let body: [String: Any] = [
         "device_id": getDeviceId(),
-        "email": email,
+//        "email": email,
+        "phone": phone,
         "password": password,
         "from_app": "ios"
     ]

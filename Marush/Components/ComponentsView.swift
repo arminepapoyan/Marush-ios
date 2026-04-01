@@ -8,6 +8,104 @@
 import SwiftUI
 import SDWebImageSwiftUI
 
+// MARK: - CartQuantityStepper
+
+/// Shared stepper used in both product cards and the cart row.
+/// Callers own the business logic (API calls, rollback); this view is pure UI.
+enum CartStepperStyle {
+    /// Compact circles — used inside CartItemRow.
+    case cart
+    /// Larger plain buttons on a white pill — used inside AddToCartControl.
+    case product
+}
+
+struct CartQuantityStepper: View {
+    let quantity: Int
+    var style: CartStepperStyle = .cart
+    let onDecrease: () -> Void
+    let onIncrease: () -> Void
+
+    var body: some View {
+        if style == .cart {
+            cartBody
+        } else {
+            productBody
+        }
+    }
+
+    // MARK: - Cart style (compact, circle-bordered buttons)
+
+    private var cartBody: some View {
+        HStack(spacing: 10) {
+            Button { onDecrease() } label: {
+                Image(systemName: "minus")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(Color(UIColor(named: "ColorDark")!))
+                    .frame(width: 28, height: 28)
+                    .overlay(Circle().stroke(Color(UIColor(named: "ColorDark")!).opacity(0.25), lineWidth: 1.5))
+            }
+            .buttonStyle(.plain)
+
+            Text("\(quantity)")
+                .font(.LatoBold(size: 16))
+                .foregroundColor(Color(UIColor(named: "ColorDark")!))
+                .frame(minWidth: 18, alignment: .center)
+
+            Button { onIncrease() } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(Color(UIColor(named: "ColorDark")!))
+                    .frame(width: 28, height: 28)
+                    .overlay(Circle().stroke(Color(UIColor(named: "ColorDark")!).opacity(0.25), lineWidth: 1.5))
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    // MARK: - Product style (full-width, equal 1/3 tap zones for −, count, +)
+
+    private var productBody: some View {
+        HStack(spacing: 0) {
+            // ── Decrease (left third) ─────────────────────────────────────────
+            Button { onDecrease() } label: {
+                Image(systemName: "minus")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(Color(UIColor(named: "ColorDark")!))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            // ── Count (centre third) ──────────────────────────────────────────
+            Text("\(quantity)")
+                .font(.LatoBold(size: 14))
+                .foregroundColor(Color(UIColor(named: "ColorDark")!))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            // ── Increase (right third) ────────────────────────────────────────
+            Button { onIncrease() } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(Color(UIColor(named: "ColorDark")!))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(height: 44)
+        .background(Color.white)
+        .cornerRadius(8)
+    }
+}
+
+// Convenience modifier — applies a transform only when `condition` is true.
+private extension View {
+    @ViewBuilder
+    func applyIf<T: View>(_ condition: Bool, transform: (Self) -> T) -> some View {
+        if condition { transform(self) } else { self }
+    }
+}
+
 struct defaultUserImage: View{
     var body: some View{
         ZStack{

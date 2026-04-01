@@ -96,17 +96,7 @@ struct ProductCard: View {
 //                    CircleIcon(imageName: "ic-basket")
 //                        .padding(.trailing, 10)
 //                        .padding(.bottom, 5)
-                    AddToCartControl(
-                        product: product,
-                        addToCart: { product, completion in
-                            AddToCart(data: ProductAddToCart(productID: product.id, count: 1)) { success in
-                                completion(success != nil)
-                            }
-                        },
-                        updateQuantity: { product, quantity in
-                            AddToCart(data: ProductAddToCart(productID: product.id, count: quantity)) { _ in }
-                        }
-                    )
+                    AddToCartControl(product: product)
 //                    .padding(.trailing, 10)
                     .padding(.bottom, 5)
 
@@ -170,92 +160,113 @@ struct ProductBadge: View {
 
 struct AddToCartControl: View {
     let product: Product
-    var addToCart: (Product, @escaping (Bool) -> Void) -> Void
-    var updateQuantity: (Product, Int) -> Void
     @ObservedObject private var cartManager = CartManager.shared
-    @State private var isLoading: Bool = false
+    /// True while the basket-button add + CartManager update is in flight.
+    @State private var isAdding: Bool = false
+    @State private var showRemoveConfirm: Bool = false
 
-    private var quantity: Int {
-        cartManager.count(for: product.id)
-    }
+    private var quantity: Int { cartManager.count(for: product.id) }
 
     var body: some View {
         ZStack {
-            if quantity > 0 {
-                stepperView
+            if isAdding {
+                HStack {
+                    Spacer()
+                    ProgressView()
+                        .scaleEffect(0.8)
+                        .frame(width: 44, height: 44)
+                        .padding(.trailing, 10)
+                }
+            } else if quantity > 0 {
+                // Full-width stepper — absorbs taps so the parent ProductCard
+                // doesn't open ProductDetailView when the user misses a button.
+                CartQuantityStepper(
+                    quantity: quantity,
+                    style: .product,
+                    onDecrease: { decreaseQuantity() },
+                    onIncrease: { increaseQuantity() }
+                )
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 10)
+                .contentShape(Rectangle())
+                .onTapGesture { }   // absorb stray taps — prevents ProductCard navigation
             } else {
                 HStack {
                     Spacer()
-                    cartButton
+                    addButton
                         .padding(.trailing, 10)
                 }
             }
         }
         .animation(.easeInOut(duration: 0.2), value: quantity)
+        .animation(.easeInOut(duration: 0.15), value: isAdding)
+        .overlay(showRemoveConfirm ? removeConfirmOverlay : nil)
     }
-}
 
+    // MARK: - Remove confirmation overlay
 
-private extension AddToCartControl {
-    
-    var cartButton: some View {
+    private var removeConfirmOverlay: some View {
+        CustomConfirmationDialog(
+            isPresented: $showRemoveConfirm,
+            title: getLocalString(string: "remove_product"),
+            text: product.name,
+            confirmButton: getLocalString(string: "remove"),
+            cancelButton: getLocalString(string: "cancel"),
+            onConfirm: {
+                CartManager.shared.setCount(0, for: product.id)
+            }
+        )
+        .transition(.opacity.animation(.easeInOut(duration: 0.2)))
+    }
+
+    // MARK: - First-add basket button
+
+    private var addButton: some View {
         Button {
-            isLoading = true
-            addToCart(product) { success in
-                isLoading = false
-                if success {
-                    CartManager.shared.setCount(1, for: product.id)
+            guard !isAdding else { return }
+            isAdding = true
+            AddToCart(data: ProductAddToCart(productID: product.id, count: 1)) { result in
+                DispatchQueue.main.async {
+                    if result != nil {
+                        CartManager.shared.setCount(1, for: product.id)
+                    }
+                    isAdding = false
                 }
             }
         } label: {
             ZStack {
-                Circle()
-                    .fill(Color.white)
-                    .frame(width: 44, height: 44)
-                
-                if isLoading {
-                    ProgressView()
-                        .scaleEffect(0.7)
-                } else {
-                    Image("ic-basket")
-                        .renderingMode(.template)
-                        .foregroundColor(.black)
-                }
+                Circle().fill(Color.white).frame(width: 44, height: 44)
+                Image("ic-basket").renderingMode(.template).foregroundColor(.black)
             }
         }
     }
-    var stepperView: some View {
-        HStack(spacing: 12) {
-            Button {
-                let newCount = quantity - 1
-                CartManager.shared.setCount(newCount, for: product.id)
-                updateQuantity(product, newCount)
-            } label: {
-                Image(systemName: "minus")
-                    .font(.system(size: 16, weight: .medium))
-                    .frame(width: 30)
-                    .foregroundColor(Color(UIColor(named: "ColorDark")!))
-            }
 
-            Text("\(quantity)")
-                .font(.LatoBold(size: 14))
-                .frame(minWidth: 30)
+    // MARK: - Stepper actions (optimistic + rollback)
 
-            Button {
-                let newCount = quantity + 1
-                CartManager.shared.setCount(newCount, for: product.id)
-                updateQuantity(product, newCount)
-            } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 16, weight: .medium))
-                    .frame(width: 30)
-                    .foregroundColor(Color(UIColor(named: "ColorDark")!))
+    private func decreaseQuantity() {
+        let newCount = quantity - 1
+        if newCount == 0 {
+            // Would reach 0 — ask for confirmation before removing
+            showRemoveConfirm = true
+            return
+        }
+        let prev = quantity
+        CartManager.shared.setCount(newCount, for: product.id)
+        AddToCart(data: ProductAddToCart(productID: product.id, count: newCount)) { result in
+            DispatchQueue.main.async {
+                if result == nil { CartManager.shared.setCount(prev, for: product.id) }
             }
         }
-        .frame(height: 40)
-//        .padding(.horizontal, 10)
-        .background(Color.white)
-        .cornerRadius(8)
     }
 
+    private func increaseQuantity() {
+        let prev = quantity
+        let newCount = quantity + 1
+        CartManager.shared.setCount(newCount, for: product.id)
+        AddToCart(data: ProductAddToCart(productID: product.id, count: newCount)) { result in
+            DispatchQueue.main.async {
+                if result == nil { CartManager.shared.setCount(prev, for: product.id) }
+            }
+        }
+    }
 }

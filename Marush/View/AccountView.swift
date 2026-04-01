@@ -91,7 +91,14 @@ struct menuList: View{
     var userData: UserViewModel
     var body: some View{
         VStack(spacing: 12){
-            menuItem(title: "\(getLocalString(string: "personal_data"))", destination: AnyView(PersonalDataView()), showDialog: .constant(false))
+            menuItem(
+                title: "\(getLocalString(string: "personal_data"))",
+                destination: AnyView(
+                    PersonalDataView()
+                        .environmentObject(userData)
+                ),
+                showDialog: .constant(false)
+            )
             menuItem(title: "\(getLocalString(string: getLocalString(string: "delivery_addresses")))", destination: AnyView(PersonalDataView()), showDialog: .constant(false))
             menuItem(title: "\(getLocalString(string: getLocalString(string: "shop")))", destination: AnyView(PersonalDataView()), showDialog: .constant(false))
             menuItem(title: "\(getLocalString(string: getLocalString(string: "configs")))", destination: AnyView(PersonalDataView()), showDialog: .constant(false), showsBottomBorder: false)

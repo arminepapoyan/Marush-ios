@@ -233,11 +233,13 @@ struct AddToCartSection: View {
                             Button {
                                 let newCount = cartCount - 1
                                 CartManager.shared.setCount(newCount, for: product.id)
-                                AddToCart(data: ProductAddToCart(productID: product.id, count: newCount)) { _ in }
+                                if newCount > 0 {
+                                    AddToCart(data: ProductAddToCart(productID: product.id, count: newCount)) { _ in }
+                                }
                             } label: {
                                 Image(systemName: "minus")
                                     .font(.system(size: 16, weight: .medium))
-                                    .frame(width: 30)
+                                    .frame(width: 44, height: 44)
                                     .foregroundColor(Color(UIColor(named: "ColorDark")!))
                             }
 
@@ -252,7 +254,7 @@ struct AddToCartSection: View {
                             } label: {
                                 Image(systemName: "plus")
                                     .font(.system(size: 16, weight: .medium))
-                                    .frame(width: 30)
+                                    .frame(width: 44, height: 44)
                                     .foregroundColor(Color(UIColor(named: "ColorDark")!))
                             }
                         }

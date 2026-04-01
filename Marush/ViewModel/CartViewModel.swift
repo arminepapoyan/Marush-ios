@@ -45,6 +45,7 @@ class CartViewModel: ObservableObject {
         
         let body: [String: Any] = [
             "token": getAccountToken(),
+            "device_id": getDeviceId(),
             "from_app": "ios"
         ]
         

@@ -92,6 +92,8 @@ struct CartView: View {
             cartInfo = d
             localTotal = d.total
             syncQuantities(from: d.list)
+            // Keep CartManager in sync so product grid and tab badge reflect actual server state
+            CartManager.shared.load(from: d)
         }
     }
 
@@ -351,7 +353,7 @@ struct CartItemRow: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .overlay(swipeGesture)
 
-                // Quantity stepper + row total — NO gesture overlay (buttons must tap)
+                // Quantity stepper + row total — NO gesture overlay (buttons must tap freely)
                 VStack(alignment: .trailing, spacing: 8) {
                     quantityStepper
                     CartAMDPrice(price: totalPrice, fontSize: 15, bold: true)
@@ -408,46 +410,12 @@ struct CartItemRow: View {
     // MARK: - Quantity stepper
 
     private var quantityStepper: some View {
-        HStack(spacing: 10) {
-            Button {
-                decreaseQuantity()
-            } label: {
-                Image(systemName: "minus")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(Color(UIColor(named: "ColorDark")!))
-                    .frame(width: 28, height: 28)
-                    .overlay(
-                        Circle()
-                            .stroke(
-                                Color(UIColor(named: "ColorDark")!).opacity(0.25),
-                                lineWidth: 1.5
-                            )
-                    )
-            }
-            .buttonStyle(.plain)
-
-            Text("\(quantity)")
-                .font(.LatoBold(size: 16))
-                .foregroundColor(Color(UIColor(named: "ColorDark")!))
-                .frame(minWidth: 18, alignment: .center)
-
-            Button {
-                increaseQuantity()
-            } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(Color(UIColor(named: "ColorDark")!))
-                    .frame(width: 28, height: 28)
-                    .overlay(
-                        Circle()
-                            .stroke(
-                                Color(UIColor(named: "ColorDark")!).opacity(0.25),
-                                lineWidth: 1.5
-                            )
-                    )
-            }
-            .buttonStyle(.plain)
-        }
+        CartQuantityStepper(
+            quantity: quantity,
+            style: .cart,
+            onDecrease: decreaseQuantity,
+            onIncrease: increaseQuantity
+        )
     }
 
     // MARK: - Swipe helpers

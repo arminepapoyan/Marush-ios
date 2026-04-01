@@ -28,7 +28,10 @@ struct SwipePanGesture: UIViewRepresentable {
         return view
     }
 
-    func updateUIView(_ uiView: UIView, context: Context) {}
+    func updateUIView(_ uiView: UIView, context: Context) {
+        context.coordinator.onChanged = onChanged
+        context.coordinator.onEnded = onEnded
+    }
 
     class Coordinator: NSObject, UIGestureRecognizerDelegate {
         

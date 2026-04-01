@@ -193,7 +193,7 @@ struct HomeView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
                 .padding(.top, -30)   // overlap GreetingView by 30pt
             }
-            .background(Color(UIColor(named: "CEF0F7")!).ignoresSafeArea())
+//            .background(Color(UIColor(named: "CEF0F7")!).ignoresSafeArea())
             .onTapGesture { hideKeyboard() }
         }
         .id(settings.resetNavigationID)

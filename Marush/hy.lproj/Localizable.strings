@@ -85,10 +85,13 @@
 "empty_wishlist_title" = "Նախընտրածների ցանկը դատարկ է";
 "back_to_shopping" = "Վերադառնալ գնումների";
 "orders_history_empty_text" = "Պատվերների ցանկը դատարկ է";
-"add_new_addresses" = "Ավելացնել նոր հասցեներ";
+"add_new_address" = "Ավելացնել նոր հասցե";
 "edit_address" = "Խմբագրել հասցեն";
 "set_as_default" = "Սահմանել որպես հիմնական";
 "save_data" = "Պահպանել տվյալները";
+"building_house" = "Շենք / Տուն";
+"door_code" = "Դռան կոդ";
+"driver_instructions" = "Վարորդի համար ցուցումներ";
 "email_notifications" = "Էլ. փոստի ծանուցումներ";
 "push_notifications" = "Push ծանուցումներ";
 "delete_account" = "Ջնջել հաշիվը";

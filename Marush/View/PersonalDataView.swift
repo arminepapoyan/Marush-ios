@@ -12,6 +12,7 @@ struct PersonalDataView: View {
     @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
     @EnvironmentObject var userData: UserViewModel
     @EnvironmentObject var settings: UserSettings
+    @EnvironmentObject var appData: AppDataViewModel
     
     @StateObject private var dateSettings = DateSettings.shared
 //    @StateObject private var userData = UserViewModel()
@@ -75,11 +76,15 @@ struct PersonalDataView: View {
         return formatter
     }()
     
+    @State private var isLoading = false
+    
     var body: some View {
-        VStack(spacing: 24){
+        // No GreetingView here — AccountView's GreetingView stays fixed above.
+        // This view fills the content card area that AccountView provides.
+        VStack(spacing: 24) {
             HeaderView(title: getLocalString(string: "personal_data"), showArrow: true, title_img: false)
-            ScrollView(.vertical,showsIndicators: false){
-                VStack(alignment: .leading, spacing: 20){
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 20) {
                     userDataView
                     saveDataButton
                     Text("change_password")
@@ -94,22 +99,20 @@ struct PersonalDataView: View {
             }
         }
         .padding(.horizontal)
-        .onAppear{
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(UIColor(named: "F9F9F9")!))
+        .onAppear {
             name = userData.name
             lastname = userData.lastname
             birthday = userData.date_of_birth
             email = userData.email
             phone = userData.phone
-            selectedGender = userData.gender
         }
-        .onTapGesture {
-            hideKeyboard()
-        }
-        .overlay( showAlert ?
-                  CustomDialog(isActive: $showAlert, icone_type: 0, title: getLocalString(string:"wrond_command"), message: errorMess, buttonTitle: "",padd: 50) {
-                    print("Pass to viewModel")
-                }
-                  : nil
+        .onTapGesture { hideKeyboard() }
+        .overlay(showAlert ?
+            CustomDialog(isActive: $showAlert, icone_type: 0, title: getLocalString(string: "wrond_command"), message: errorMess, buttonTitle: "", padd: 50) {
+                print("Pass to viewModel")
+            } : nil
         )
         .overlay(
             Group {
@@ -117,8 +120,7 @@ struct PersonalDataView: View {
                     swalDialog(isPresented: $showActionDialog, title: successTitle, text: successMessage, type: actionDialogType, button: "OK")
                 }
             }
-         )
-        .navigationBarBackButtonHidden(true)  // Hide the back button
+        )
     }
     
     private var userDataView: some View {
@@ -155,7 +157,7 @@ struct PersonalDataView: View {
                     focusedField = nil
                 }
             //            phoneInput
-            genderSelection
+//            genderSelection
         }
     }
     
@@ -316,7 +318,7 @@ struct PersonalDataView: View {
             return // Early exit if there are validation errors
         }
         
-        updateUserData(data: UpdateUser(name: name, lastname: lastname, email: email, date_of_birth: birthday, gender: selectedGender)){
+        updateUserData(data: UpdateUser(name: name, lastname: lastname, email: email, date_of_birth: birthday)){
             response in
             saveDataLoading = false
             if(response?.status == 200){
@@ -422,7 +424,7 @@ struct PersonalDataView: View {
         userData.lastname = lastname
         userData.date_of_birth = birthday
         userData.email = email
-        userData.gender = selectedGender
+//        userData.gender = selectedGender
     }
     private func updateUserPasswordEnviroment(){
         userData.password = password

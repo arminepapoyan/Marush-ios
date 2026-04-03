@@ -9,16 +9,24 @@ import SwiftUI
 
 struct HeaderView: View {
     @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
+    @Environment(\.overlayDismiss) var overlayDismiss
     var title: String = "Your Rewards"
     var showArrow: Bool = true
     var title_img: Bool = false
-    
+    var onBack: (() -> Void)? = nil
+
     var body: some View {
         HStack{
             // Back Button
             if showArrow {
                 Button(action: {
-                    self.presentationMode.wrappedValue.dismiss()
+                    if let onBack = onBack {
+                        onBack()
+                    } else if let overlayDismiss = overlayDismiss {
+                        overlayDismiss()
+                    } else {
+                        self.presentationMode.wrappedValue.dismiss()
+                    }
                 }) {
                     Image(systemName: "arrow.left")
                         .font(.title)
@@ -43,7 +51,7 @@ struct HeaderView: View {
             Spacer()
         }
         .padding(.vertical, 15)
-        .background(Color.white)
+        .background(Color(UIColor(named: "F9F9F9")!))
     }
 }
 

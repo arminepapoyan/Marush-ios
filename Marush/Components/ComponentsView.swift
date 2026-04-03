@@ -276,19 +276,19 @@ struct birthdayInput: View {
     var body: some View{
         HStack {
             ZStack(alignment: .leading) {
-                Text("Birthdate")
-                    .font(.Poppins(size: birthdate.isEmpty ? 16: 13))
-                    .foregroundColor(.black.opacity(0.5))
-                    .padding(.horizontal, 10)
-                    .offset(y: birthdate.isEmpty ? 0 : -15)
-                    .scaleEffect(birthdate.isEmpty ? 1 : 0.9, anchor: .leading)
+//                Text("Birthdate")
+//                    .font(.Poppins(size: birthdate.isEmpty ? 16: 13))
+//                    .foregroundColor(.black.opacity(0.5))
+//                    .padding(.horizontal, 10)
+//                    .offset(y: birthdate.isEmpty ? 0 : -15)
+//                    .scaleEffect(birthdate.isEmpty ? 1 : 0.9, anchor: .leading)
                 
                 TextField("", text: $birthdate)
                     .font(.system(size: 18, design: .rounded))
                     .foregroundColor(.black)
                     .padding(.horizontal, 10)
                     .disabled(true)  // Make the TextField read-only
-                    .offset(y: birthdate.isEmpty ? 0 : 8)
+//                    .offset(y: birthdate.isEmpty ? 0 : 8)
             }
             
             if wrongBirthdate{
@@ -298,9 +298,9 @@ struct birthdayInput: View {
                     .padding(.trailing, 8)
             }
         }
-        .padding(.vertical, 20)
+        .padding(.vertical, 10)
         .overlay(
-            RoundedRectangle(cornerRadius: 15)
+            RoundedRectangle(cornerRadius: 30)
                 .stroke(Color(UIColor(named: "CustomGray")!), lineWidth: 1)
         )
         .overlay(alignment: .trailing){

@@ -53,12 +53,13 @@ struct InputView: View {
                 }
             }
             .padding(.vertical, inputVerticalPadding)
-            .background(Color.white)
+            
             .overlay(
                 RoundedRectangle(cornerRadius: 30)
                     .stroke(Color((showError || isError) ? UIColor(named: "F04751")! : UIColor(named: "CustomGray")!), lineWidth: (showError || isError) ? 1 : 1)
 //                    .background(.white)
             )
+            .background(Color.white)
             .padding(2)
             .overlay(alignment: .trailing){
                 isError ?
@@ -82,7 +83,7 @@ struct InputView: View {
                     }
                 }
             }
-            .cornerRadius(15)
+            .cornerRadius(30)
 
             if ((showError || isError) && !errorMessage.isEmpty){
                 Text(errorMessage)

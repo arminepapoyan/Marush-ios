@@ -172,21 +172,27 @@ struct Shop: Codable, Identifiable, Hashable{
 struct Address: Identifiable, Codable, Hashable {
     var id: String
     var title: String
+    var city: String
     var address: String
     var building: String
     var apartment: String
     var entrance: String
     var floor: String
+    var domofon: String
     var isDefault: Int
+    var comment: String
 
     enum CodingKeys: String, CodingKey {
         case id
         case title
+        case city
         case address
         case building
         case apartment
         case entrance
         case floor
+        case domofon
+        case comment
         case isDefault = "default"
     }
     

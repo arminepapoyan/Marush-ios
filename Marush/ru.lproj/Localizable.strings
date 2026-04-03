@@ -87,10 +87,13 @@
 "empty_wishlist_title" = "Favorites list is empty";
 "back_to_shopping" = "Back to shopping";
 "orders_history_empty_text" = "The orders list is empty";
-"add_new_addresses" = "Add new addresses";
+"add_new_address" = "Add new address";
 "edit_address" = "Edit Address";
-"set_as_default" = "Set as default";
-"save_data" = "Save data";
+"set_as_default" = "Установить по умолчанию";
+"save_data" = "Сохранить данные";
+"building_house" = "Здание / Дом";
+"door_code" = "Код двери";
+"driver_instructions" = "Инструкции для водителя";
 "email_notifications" = "Email Notifications";
 "push_notifications" = "Push Notification";
 "delete_account" = "Delete account";

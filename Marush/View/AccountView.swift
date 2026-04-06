@@ -160,8 +160,27 @@ struct menuList: View {
                 showDialog: .constant(false),
                 activeDestination: $activeDestination
             )
-            menuItem(title: getLocalString(string: "shop"),               destination: AnyView(EmptyView()), showDialog: .constant(false), activeDestination: $activeDestination)
-            menuItem(title: getLocalString(string: "configs"),            destination: AnyView(EmptyView()), showDialog: .constant(false), activeDestination: $activeDestination, showsBottomBorder: false)
+            menuItem(
+                title: getLocalString(string: "locations"),
+                destination: AnyView(
+                    LocationsView()
+                        .environmentObject(settings)
+                ),
+                showDialog: .constant(false),
+                activeDestination: $activeDestination
+            )
+            menuItem(
+                title: getLocalString(string: "configs"),
+                destination: AnyView(
+                    SettingsView()
+                        .environmentObject(settings)
+                        .environmentObject(userData)
+                ),
+
+                showDialog: .constant(false),
+                activeDestination: $activeDestination,
+                showsBottomBorder: false
+            )
 //            menuItem(title: getLocalString(string: "favorites"),        destination: AnyView(WishlistView()),                                                         showDialog: .constant(false), activeDestination: $activeDestination)
 //            menuItem(title: getLocalString(string: "rewards"),          destination: AnyView(RewardsView(dismissArrow: true).environmentObject(settings)),           showDialog: .constant(false), activeDestination: $activeDestination)
 //            menuItem(title: getLocalString(string: "order_history"),    destination: AnyView(OrdersHistoryView(dismissArrow: true)),                                 showDialog: .constant(false), activeDestination: $activeDestination)

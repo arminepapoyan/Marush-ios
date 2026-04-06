@@ -299,6 +299,7 @@ struct birthdayInput: View {
             }
         }
         .padding(.vertical, 10)
+        .padding(.horizontal, 2)
         .overlay(
             RoundedRectangle(cornerRadius: 30)
                 .stroke(Color(UIColor(named: "CustomGray")!), lineWidth: 1)
@@ -312,7 +313,7 @@ struct birthdayInput: View {
             }
             : nil
         }
-        .cornerRadius(15)
+        .cornerRadius(30)
     }
 }
 

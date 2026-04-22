@@ -132,6 +132,7 @@ struct AddressFormView: View {
     @Binding var showForm: Bool
     @Binding var showAlert: Bool
     @Binding var errorMess: String
+    var onSaved: (() -> Void)? = nil
 
     @State private var id                  = ""
     @State private var address             = ""
@@ -340,9 +341,10 @@ struct AddressFormView: View {
             if response?.status == 200 {
                 addressVM.getData { addresses in
                     if let addresses = addresses {
-                        addressVM.data = addresses
+                        DispatchQueue.main.async { addressVM.data = addresses }
                     }
                 }
+                onSaved?()
                 withAnimation(.easeInOut(duration: 0.28)) { showForm = false }
             } else if let msg = response?.message, !msg.isEmpty {
                 errorMess = msg
@@ -506,5 +508,194 @@ struct AddressItem: View {
     }
     private func closeSwipe() {
         withAnimation(.easeInOut(duration: 0.25)) { offset = 0; isSwiped = false }
+    }
+}
+
+// MARK: - AddressPickerSheet
+
+struct AddressPickerSheet: View {
+    @EnvironmentObject var appData: AppDataViewModel
+    @Binding var isPresented: Bool
+
+    @StateObject private var addressVM = AddressesViewModel()
+    @State private var showAddForm      = false
+    @State private var newAddress: Address = .empty
+    @State private var isSettingDefault = false
+    @State private var isLoading        = true
+
+    var body: some View {
+        VStack(spacing: 0) {
+
+            // ── Header ───────────────────────────────────────────────────────
+            HStack {
+                Text(getLocalString(string: "delivery_addresses"))
+                    .font(.LatoBold(size: 18))
+                    .foregroundColor(Color(UIColor(named: "ColorDark")!))
+                Spacer()
+                Button { isPresented = false } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.gray)
+                        .padding(8)
+                        .background(Circle().fill(Color.gray.opacity(0.1)))
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
+            .padding(.bottom, 16)
+
+            // ── Add New Address button ────────────────────────────────────────
+            Button {
+                newAddress = .empty
+                showAddForm = true
+            } label: {
+                HStack(spacing: 10) {
+//                    Image(systemName: "plus.circle.fill")
+//                        .font(.system(size: 18))
+//                        .foregroundColor(Color(UIColor(named: "ColorDark")!))
+                    Text(getLocalString(string: "add_new_address"))
+                        .font(.LatoBold(size: 15))
+                        .foregroundColor(Color(UIColor(named: "ColorDark")!))
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(Color.gray.opacity(0.5))
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 20)
+                .background(Color(UIColor(named: "CEF0F7")!))
+                .cornerRadius(8)
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 12)
+
+            // ── Addresses list ────────────────────────────────────────────────
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 0) {
+                    if isLoading {
+                        ForEach(0..<5, id: \.self) { _ in
+                            AddressPickerRowShimmer()
+                        }
+                    } else {
+                        ForEach(appData.addresses) { addr in
+                            Button { selectAddress(addr) } label: {
+                                pickerRow(addr)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(isSettingDefault)
+                        }
+                    }
+                }
+                bottomShadowIgnore(count: 3)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.white)
+        .onAppear {
+            isLoading = true
+            refreshAddresses()
+        }
+        .sheet(isPresented: $showAddForm) {
+            AddressFormView(
+                addressVM: addressVM,
+                selectedAddress: $newAddress,
+                showForm: $showAddForm,
+                showAlert: .constant(false),
+                errorMess: .constant(""),
+                onSaved: { refreshAddresses() }
+            )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func refreshAddresses() {
+        addressVM.getData { addresses in
+            DispatchQueue.main.async {
+                if let addresses = addresses {
+                    appData.addresses = addresses
+                }
+                isLoading = false
+            }
+        }
+    }
+
+    private func selectAddress(_ address: Address) {
+        guard !isSettingDefault else { return }
+        isSettingDefault = true
+        MakeDefaultAddress(id: address.id) { response in
+            DispatchQueue.main.async {
+                isSettingDefault = false
+                if response?.status == 200 {
+                    appData.addresses = appData.addresses.map { a in
+                        var copy = a
+                        copy.isDefault = (a.id == address.id) ? 1 : 0
+                        return copy
+                    }
+                    isPresented = false
+                }
+            }
+        }
+    }
+
+    private func pickerRow(_ address: Address) -> some View {
+        let subtitle = buildSubtitle(address)
+        return HStack(spacing: 14) {
+            Image("ic-address-list")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 20, height: 22)
+                .foregroundColor(address.isDefault == 1
+                    ? Color(UIColor(named: "ColorPrimary")!)
+                    : Color.gray.opacity(0.45))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(address.address)
+                    .font(.LatoBold(size: 15))
+                    .foregroundColor(Color(UIColor(named: "ColorDark")!))
+                    .lineLimit(1)
+                if !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(.Lato(size: 13))
+                        .foregroundColor(.gray)
+                        .lineLimit(1)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            if address.isDefault == 1 {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 20))
+                    .foregroundColor(Color(UIColor(named: "ColorPrimary")!))
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background(Color.white)
+//        .cornerRadius(12)
+        .overlay(
+               VStack {
+                   Spacer()
+                   Rectangle()
+                       .fill(Color(UIColor(named: "CEF0F7")!)) // border color
+                       .frame(height: 1)
+               }
+           )
+//        .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 2)
+//        .overlay(
+//            RoundedRectangle(cornerRadius: 12)
+//                .stroke(Color.clear, lineWidth: 1.5)
+//        )
+    }
+
+    private func buildSubtitle(_ address: Address) -> String {
+        var parts: [String] = []
+        if !address.entrance.isEmpty  { parts.append("\(getLocalString(string: "entrance")) \(address.entrance)") }
+        if !address.floor.isEmpty     { parts.append("\(getLocalString(string: "floor")) \(address.floor)") }
+        if !address.apartment.isEmpty { parts.append("apt. \(address.apartment)") }
+        return parts.joined(separator: ", ")
     }
 }

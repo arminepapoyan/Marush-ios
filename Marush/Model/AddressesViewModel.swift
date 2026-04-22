@@ -60,6 +60,20 @@ func RemoveAddress(data: Address, completion: @escaping (Message?) -> Void) {
 }
 
 
+func MakeDefaultAddress(id: String, completion: @escaping (Message?) -> Void) {
+    let url = NetworkManager.shared.constructURL(endpoint: "address/makeDefault")
+    let body: [String: Any] = [
+        "token": getAccountToken(),
+        "device_id": getDeviceId(),
+        "from_app": "ios",
+        "id": id
+    ]
+    NetworkManager.shared.performRequest(url: url, body: body) { (result: Message?) in
+        completion(result)
+    }
+}
+
+
 func AddAddress(data: Address, completion: @escaping (Message?) -> Void) {
 //    let url = NetworkManager.shared.constructURL(endpoint: "test/error")
     var url_endpoint: String = "address/add"

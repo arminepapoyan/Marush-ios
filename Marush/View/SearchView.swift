@@ -52,7 +52,12 @@ struct SearchView: View {
                     horizontalPadding: horizontalPadding,
                     settings: settings,
                     context: .search,
-                    backgroundColor: Color(UIColor(named: "F9F9F9")!)
+                    backgroundColor: Color(UIColor(named: "F9F9F9")!),
+                    onBack: {
+                        var t = Transaction()
+                        t.disablesAnimations = true
+                        withTransaction(t) { onDismiss?() }
+                    }
                 )
 
                 // Scrollable products below the header

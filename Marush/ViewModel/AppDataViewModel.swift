@@ -18,6 +18,7 @@ class AppDataViewModel: ObservableObject {
     @Published var categories: [Category] = []
     @Published var cart: CartResponse?
     @Published var phone: String? = ""
+    @Published var addresses: [Address] = []
     
     init() {
         self.getData { data in
@@ -54,6 +55,7 @@ class AppDataViewModel: ObservableObject {
             self.categories = data.categories ?? []
             self.cart = data.cart
             self.phone = data.phone ?? ""
+            self.addresses = data.addresses ?? []
             CartManager.shared.load(from: data.cart)
         }
     }

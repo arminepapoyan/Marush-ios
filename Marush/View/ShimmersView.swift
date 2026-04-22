@@ -158,6 +158,40 @@ struct productsSliderItemShimmer: View{
     }
 }
 
+struct AddressPickerRowShimmer: View {
+    var body: some View {
+        HStack(spacing: 14) {
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color(UIColor(named: "ColorShimmer")!))
+                .frame(width: 22, height: 26)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Rectangle()
+                    .fill(Color(UIColor(named: "ColorShimmer")!))
+                    .frame(height: 13)
+                    .frame(maxWidth: .infinity)
+                Rectangle()
+                    .fill(Color(UIColor(named: "ColorShimmer")!))
+                    .frame(width: 140, height: 11)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background(Color.white)
+        .overlay(
+            VStack {
+                Spacer()
+                Rectangle()
+                    .fill(Color(UIColor(named: "CEF0F7")!))
+                    .frame(height: 1)
+            }
+        )
+        .redacted(reason: .placeholder)
+        .shimmering()
+    }
+}
+
 struct productDetailImageShimmer: View{
     var body: some View{
         VStack{
@@ -236,7 +270,7 @@ struct OrderHistoryShimmer: View{
         }
         .background(
             RoundedRectangle(cornerRadius: 15)
-                .stroke(Color(UIColor(named: "ABABAB")!), lineWidth: 1)
+                .stroke(Color(UIColor(named: "F9F9F9")!), lineWidth: 1)
         )
         .redacted(reason: .placeholder)
         .shimmering()

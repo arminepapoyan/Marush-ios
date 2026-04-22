@@ -25,7 +25,7 @@ struct Message:Codable {
     var added : Bool?
     var user:User?
     var categories: [Category]?
-//    var orders: [Order]?
+    var orders: [Order]?
     var products: [Product]?
     var cart_count: Int?
 }

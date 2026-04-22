@@ -29,7 +29,7 @@ struct ScrollOffsetKey: PreferenceKey {
 }
 
 struct DashedDivider: View {
-    var color: Color = Color(UIColor(named: "ABABAB")!)
+    var color: Color = Color(UIColor(named: "F9F9F9")!)
     var body: some View {
         Rectangle()
             .stroke(style: StrokeStyle(lineWidth: 0.5, dash: [5, 3])) // Dash and space pattern

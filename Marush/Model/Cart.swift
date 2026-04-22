@@ -251,97 +251,95 @@ struct PaymentMethod: Identifiable, Codable {
 //}
 //
 //
-//struct Order: Codable, Identifiable{
-//    let id: Int
-//    let billingName: String
-//    let billingLastname: String
-//    let billingPhone: String
-//    let billingEmail: String
-//    let billingAddress: String?
-//    let billingAddressFull: String?
-//    let billingBuilding: String?
-//    let billingApartment: String?
-//    let billingFloor: String?
-//    let billingEntrance: String?
-//    let statusName: String
-//    let isDelivery: Bool
-//    let deliveryDate: String?
-//    let deliveryTime: String?
-//    let comment: String
-//    let paymentMethod: PaymentMethod
-//    let productsTotal: Double
-//    let shippingTotal: Double
-//    let bonusTotal: Double
-//    let bonusGotTotal: Double
-//    let total: Double
-//    let payed: Bool
-//    let coupon: String?
-//    let products: [OrderedProduct]
-//    let shop: Shop?
-//    let statusId: Int?
-//    let statusDesc: String?
-//    let statusImage: String?
-//    let stepCount: Int?
-//    let stepNow: Int?
-//    let isFinished: Bool?
-//    let isCancelled: Bool?
-//    let waitingTime: String?
-//    let couponTotal: Double?
-//    
-//    private enum CodingKeys: String, CodingKey {
-//        case id
-//        case billingName = "billing_name"
-//        case billingLastname = "billing_lastname"
-//        case billingPhone = "billing_phone"
-//        case billingEmail = "billing_email"
-//        case billingAddress = "billing_address"
-//        case billingAddressFull = "billing_address_full"
-//        case billingBuilding = "billing_building"
-//        case billingApartment = "billing_apartment"
-//        case billingFloor = "billing_floor"
-//        case billingEntrance = "billing_entrance"
-//        case statusName = "status_name"
-//        case isDelivery = "is_delivery"
-//        case deliveryDate = "delivery_date"
-//        case deliveryTime = "delivery_time"
-//        case comment
-//        case paymentMethod = "payment_method"
-//        case productsTotal = "products_total"
-//        case shippingTotal = "shipping_total"
-//        case bonusTotal = "bonus_total"
-//        case bonusGotTotal = "bonus_got_total"
-//        case total,payed, coupon
-//        case products, shop
-//        case statusId = "status_id"
-//        case statusDesc = "status_desc"
-//        case statusImage = "status_image"
-//        case stepCount = "step_count"
-//        case stepNow = "step_now"
-//        case isFinished = "is_finished"
-//        case isCancelled = "is_cancelled"
-//        case waitingTime = "waiting_time"
-//        case couponTotal = "coupon_total"
-//    }
-//  
-//}
-//
-//struct OrderedProduct: Codable, Identifiable{
-//    let id = UUID()
-//    let price: String
-//    let count: String?
-//    let total: String?
-//    let bonusTotal: String?
-//    let product: Product?
-//    let selectedFeatures: [SelectedFeatures]?
-//    
-//    private enum CodingKeys: String, CodingKey {
-//        case id
-//        case price, count, total
-//        case bonusTotal = "bonus_total"
-//        case product
-//        case selectedFeatures = "selected_features"
-//    }
-//}
+struct Order: Codable, Identifiable{
+    let id: Int
+    let billingName: String
+    let billingLastname: String
+    let billingPhone: String
+    let billingEmail: String
+    let billingAddress: String?
+    let billingAddressFull: String?
+    let billingBuilding: String?
+    let billingApartment: String?
+    let billingFloor: String?
+    let billingEntrance: String?
+    let statusName: String
+    let isDelivery: Bool
+    let deliveryDate: String?
+    let deliveryTime: String?
+    let comment: String
+    let paymentMethod: PaymentMethod
+    let productsTotal: Double
+    let shippingTotal: Double
+    let bonusTotal: Double
+    let bonusGotTotal: Double
+    let total: Double
+    let payed: Bool
+    let coupon: String?
+    let products: [OrderedProduct]
+    let shop: Shop?
+    let statusId: Int?
+    let statusDesc: String?
+    let statusImage: String?
+    let stepCount: Int?
+    let stepNow: Int?
+    let isFinished: Bool?
+    let isCancelled: Bool?
+    let waitingTime: String?
+    let couponTotal: Double?
+    
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case billingName = "billing_name"
+        case billingLastname = "billing_lastname"
+        case billingPhone = "billing_phone"
+        case billingEmail = "billing_email"
+        case billingAddress = "billing_address"
+        case billingAddressFull = "billing_address_full"
+        case billingBuilding = "billing_building"
+        case billingApartment = "billing_apartment"
+        case billingFloor = "billing_floor"
+        case billingEntrance = "billing_entrance"
+        case statusName = "status_name"
+        case isDelivery = "is_delivery"
+        case deliveryDate = "delivery_date"
+        case deliveryTime = "delivery_time"
+        case comment
+        case paymentMethod = "payment_method"
+        case productsTotal = "products_total"
+        case shippingTotal = "shipping_total"
+        case bonusTotal = "bonus_total"
+        case bonusGotTotal = "bonus_got_total"
+        case total,payed, coupon
+        case products, shop
+        case statusId = "status_id"
+        case statusDesc = "status_desc"
+        case statusImage = "status_image"
+        case stepCount = "step_count"
+        case stepNow = "step_now"
+        case isFinished = "is_finished"
+        case isCancelled = "is_cancelled"
+        case waitingTime = "waiting_time"
+        case couponTotal = "coupon_total"
+    }
+  
+}
+
+struct OrderedProduct: Codable, Identifiable{
+    let id = UUID()
+    let price: String
+    let count: String?
+    let total: String?
+    let bonusTotal: String?
+    let product: Product?
+    
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case price, count, total
+        case bonusTotal = "bonus_total"
+        case product
+    }
+}
 //
 //struct OrderPaymentResult {
 //    var showPaymentDialog: Bool = false

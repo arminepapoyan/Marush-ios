@@ -33,9 +33,16 @@ struct TabContent: View {
         let selectable = Binding(
             get: { settings.selection },
             set: { newValue in
-                if newValue == 0 && settings.selection == 0 {
-                    // Home tab re-tapped: signal HomeView to dismiss search and reload
-                    settings.resetNavigationID = UUID()
+                if newValue == 0 {
+                    if settings.selection == 0 {
+                        // Home tab re-tapped while already active: dismiss search & reload
+                        settings.resetNavigationID = UUID()
+                    } else {
+                        // Switching from another tab to home: just dismiss search
+                        var t = Transaction()
+                        t.disablesAnimations = true
+                        withTransaction(t) { settings.showSearch = false }
+                    }
                 }
                 settings.selection = newValue
             })
@@ -60,8 +67,10 @@ struct TabContent: View {
                 title: getLocalString(string: "my_orders"),
                 icon: "ic-orders"
             ) {
-                HomeTestView()
-//                    .environmentObject(settings)
+                OrdersHistoryView()
+                    .environmentObject(settings)
+                    .environmentObject(userData)
+                    .environmentObject(appData)
             }
 
             TabBarItem(

@@ -17,6 +17,7 @@ struct AppData: Codable {
     let productsNews: [Product]
     let cart: CartResponse?
     let phone: String?
+    let addresses: [Address]?
 
     enum CodingKeys: String, CodingKey {
         case status
@@ -27,6 +28,7 @@ struct AppData: Codable {
         case productsNews = "products_news"
         case cart
         case phone
+        case addresses
     }
 }
 

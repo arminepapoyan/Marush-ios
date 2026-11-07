@@ -238,3 +238,56 @@
 "repeat_order" = "Կրկնել պատվերը";
 "pieces" = "հատ";
 "pick_up_time" = "Ստացման ժամ";
+
+"make_order" = "Կատարել պատվեր";
+"delivery_type" = "Առաքման տեսակ";
+"delivery" = "Առաքում";
+"pickup" = "Վերցնել";
+"delivery_address" = "Առաքման հասցե";
+"pickup_location" = "Ստացման կետ";
+"select_shop" = "Ընտրել խանութ";
+"asap" = "Հնարավորինս շուտ";
+"payment_method" = "Վճարման եղանակ";
+"use_bonus" = "Օգտագործել բոնուս";
+"available_bonus" = "Հասանելի բոնուս";
+"coupon" = "Կուպոն";
+"enter_coupon" = "Մուտքագրեք կուպոնի կոդը";
+"apply" = "Կիրառել";
+"personal_info" = "Անձնական տվյալներ";
+"place_order" = "Կատարել պատվեր";
+"add_comment" = "Ավելացնել նշում...";
+"products_total" = "Ապրանքներ";
+"delivery_fee" = "Առաքում";
+"coupon_discount" = "Զեղչ";
+"bonus_used" = "Բոնուս";
+"order_placed" = "Պատվերը կատարված է!";
+"no_addresses" = "Հասցեներ չկան";
+"no_shops" = "Հասանելի խանութներ չկան";
+"close_btn" = "Փակել";
+"please_select_address" = "Խնդրում ենք ընտրել հասցե";
+"please_select_shop" = "Խնդրում ենք ընտրել ստացման կետ";
+"please_select_payment" = "Խնդրում ենք ընտրել վճարման եղանակ";
+
+"my_info" = "Իմ ինֆորմացիան";
+"delivery_conditions" = "Առաքման պայմաններ";
+"free" = "Անվճար";
+"schedule_later" = "Պլանավորել հետոյ համար";
+"select_time_label" = "Ընտրեք ժամը";
+"change" = "Փոխիր";
+"confirm" = "Հաստատել";
+
+"day_label" = "Օր";
+"time_label" = "Ժամ";
+
+"cancel_btn" = "Չեղարկել";
+"ok_btn" = "Լավ";
+
+/* Checkout */
+"delivery_for_someone_else" = "Առաքում ուրիշի համար";
+"apartment" = "Բնակարան/Օֆիս";
+"door_phone" = "Դոմոֆոն";
+"instructions_for_driver" = "Հրահանգներ վարորդին";
+"recipient_name" = "Ստացողի անունը";
+"recipient_phone" = "Ստացողի հեռախոսահամարը";
+"items_in_order" = "Պատվերի ապրանքները";
+"edit" = "Խմբագրել";

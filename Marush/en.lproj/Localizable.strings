@@ -240,3 +240,56 @@
 "repeat_order" = "Repeat order";
 "pieces" = "pcs";
 "pick_up_time" = "Pick-up time";
+
+"make_order" = "Checkout";
+"delivery_type" = "Delivery type";
+"delivery" = "Delivery";
+"pickup" = "Pickup";
+"delivery_address" = "Delivery address";
+"pickup_location" = "Pickup location";
+"select_shop" = "Select shop";
+"asap" = "As soon as possible";
+"payment_method" = "Payment method";
+"use_bonus" = "Use bonus";
+"available_bonus" = "Available bonus";
+"coupon" = "Coupon";
+"enter_coupon" = "Enter coupon code";
+"apply" = "Apply";
+"personal_info" = "Personal info";
+"place_order" = "Place order";
+"add_comment" = "Add a note...";
+"products_total" = "Products";
+"delivery_fee" = "Delivery";
+"coupon_discount" = "Discount";
+"bonus_used" = "Bonus";
+"order_placed" = "Order placed!";
+"no_addresses" = "No saved addresses";
+"no_shops" = "No available shops";
+"close_btn" = "Close";
+"please_select_address" = "Please select a delivery address";
+"please_select_shop" = "Please select a pickup location";
+"please_select_payment" = "Please select a payment method";
+
+"my_info" = "My information";
+"delivery_conditions" = "Delivery conditions";
+"free" = "Free";
+"schedule_later" = "Schedule for later";
+"select_time_label" = "Select time";
+"change" = "Change";
+"confirm" = "Confirm";
+
+"day_label" = "Day";
+"time_label" = "Time";
+
+"cancel_btn" = "Cancel";
+"ok_btn" = "OK";
+
+/* Checkout */
+"delivery_for_someone_else" = "Delivery for someone else";
+"apartment" = "App./Office";
+"door_phone" = "Door phone";
+"instructions_for_driver" = "Instructions for driver";
+"recipient_name" = "Recipient name";
+"recipient_phone" = "Recipient phone number";
+"items_in_order" = "Items in the order";
+"edit" = "Edit";

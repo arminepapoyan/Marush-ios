@@ -85,9 +85,12 @@ class CartViewModel: ObservableObject {
 func UpdateCart(data: CartUpdate, completion: @escaping (CartResponse?) -> Void) {
 //    let url = NetworkManager.shared.constructURL(endpoint: "test/error")
     let url = NetworkManager.shared.constructURL(endpoint: "cart/update")
+    // `product_id` is required by the API (sent as a number when numeric).
+    let productId: Any = Int(data.product_id) ?? data.product_id
     let body: [String: Any] = [
         "token": getAccountToken(),
         "device_id": getDeviceId(),
+        "product_id": productId,
         "cart_id": data.cart_id,
         "count": data.count,
         "use_bonus_amount": data.use_bonus_amount ?? 0,
@@ -102,9 +105,12 @@ func UpdateCart(data: CartUpdate, completion: @escaping (CartResponse?) -> Void)
 func RemoveFromCart(data: RemoveCartData, completion: @escaping (CheckoutResponse?) -> Void) {
 //    let url = NetworkManager.shared.constructURL(endpoint: "test/error")
     let url = NetworkManager.shared.constructURL(endpoint: "cart/remove")
+    // `product_id` is required by the API (sent as a number when numeric).
+    let productId: Any = Int(data.product_id) ?? data.product_id
     let body: [String: Any] = [
         "token": getAccountToken(),
         "device_id": getDeviceId(),
+        "product_id": productId,
         "cart_id": data.cart_id,
         "use_bonus_amount": data.use_bonus_amount ?? 0,
         "from_app": "ios"
@@ -163,6 +169,8 @@ func Checkout(data: CheckoutRunModel, completion: @escaping (Message?) -> Void) 
         "billing_building": data.billing_building,
         "billing_entrance": data.billing_entrance,
         "billing_floor": data.billing_floor,
+        "billing_domofon": data.billing_domofon,
+        "delivery_date": data.delivery_date,
         "delivery_time": data.delivery_time,
         "payment_method": data.payment_method,
         "use_bonus_amount": data.use_bonus_amount,
@@ -171,7 +179,14 @@ func Checkout(data: CheckoutRunModel, completion: @escaping (Message?) -> Void) 
         "billing_email": data.billing_email,
         "billing_phone": data.billing_phone,
         "billing_comment": data.billing_comment,
-        "comment": data.billing_comment,
+        "billing_city": data.billing_city,
+        "billing_state": data.billing_state,
+        "billing_district": data.billing_district,
+        "billing_street": data.billing_street,
+        "billing_area": data.billing_area,
+        "billing_country": data.billing_country,
+        "billing_latitude": data.billing_latitude,
+        "billing_longitude": data.billing_longitude,
         "coupon": data.coupon,
         "save_card": data.save_card ? 1 : 0,
         "user_card_id": data.user_card_id

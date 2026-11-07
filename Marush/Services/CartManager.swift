@@ -38,4 +38,10 @@ class CartManager: ObservableObject {
             self.items = newItems
         }
     }
+
+    func clearAll() {
+        DispatchQueue.main.async {
+            self.items = [:]
+        }
+    }
 }

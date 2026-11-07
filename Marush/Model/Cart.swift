@@ -119,12 +119,14 @@ struct CheckoutResponse: Codable {
 //}
 
 struct CartUpdate: Codable{
+    let product_id: String
     let cart_id: String
     let count: Int
     let use_bonus_amount: Int?
 }
 
 struct RemoveCartData: Codable{
+    let product_id: String
     let cart_id: String
     let use_bonus_amount: Int?
 }
@@ -413,6 +415,7 @@ struct FetchCardDataRequest{
 }
 
 
+/// Mirrors Android's `AddOrderRequest` so `order/add` receives the same payload.
 struct CheckoutRunModel{
     var is_delivery: Int = 0
     var is_asap: Int = 1
@@ -422,16 +425,29 @@ struct CheckoutRunModel{
     var billing_building: String = ""
     var billing_entrance: String = ""
     var billing_floor: String = ""
+    var billing_domofon: String = ""
+    /// `delivery_date` and `delivery_time` are two separate fields on the API.
+    var delivery_date: String = ""
     var delivery_time: String = ""
     var payment_method: String = ""
     var use_bonus_amount: Int = 0
-    
+
     var billing_name: String = ""
     var billing_lastname: String = ""
     var billing_email: String = ""
     var billing_phone: String = ""
     var billing_comment: String = ""
-    
+
+    // Location details — carried straight through from the selected address.
+    var billing_city: String = ""
+    var billing_state: String = ""
+    var billing_district: String = ""
+    var billing_street: String = ""
+    var billing_area: String = ""
+    var billing_country: String = ""
+    var billing_latitude: String = ""
+    var billing_longitude: String = ""
+
     var coupon: String = ""
     var save_card: Bool = true
     var user_card_id: Int = 0

@@ -240,3 +240,56 @@
 "repeat_order" = "Повторить заказ";
 "pieces" = "шт";
 "pick_up_time" = "Время самовывоза";
+
+"make_order" = "Оформление";
+"delivery_type" = "Тип доставки";
+"delivery" = "Доставка";
+"pickup" = "Самовывоз";
+"delivery_address" = "Адрес доставки";
+"pickup_location" = "Пункт выдачи";
+"select_shop" = "Выбрать магазин";
+"asap" = "Как можно скорее";
+"payment_method" = "Способ оплаты";
+"use_bonus" = "Использовать бонус";
+"available_bonus" = "Доступный бонус";
+"coupon" = "Купон";
+"enter_coupon" = "Введите код купона";
+"apply" = "Применить";
+"personal_info" = "Личные данные";
+"place_order" = "Оформить заказ";
+"add_comment" = "Добавить заметку...";
+"products_total" = "Товары";
+"delivery_fee" = "Доставка";
+"coupon_discount" = "Скидка";
+"bonus_used" = "Бонус";
+"order_placed" = "Заказ оформлен!";
+"no_addresses" = "Адреса не найдены";
+"no_shops" = "Нет доступных магазинов";
+"close_btn" = "Закрыть";
+"please_select_address" = "Пожалуйста, выберите адрес доставки";
+"please_select_shop" = "Пожалуйста, выберите пункт выдачи";
+"please_select_payment" = "Пожалуйста, выберите способ оплаты";
+
+"my_info" = "Моя информация";
+"delivery_conditions" = "Условия доставки";
+"free" = "Бесплатно";
+"schedule_later" = "Запланировать";
+"select_time_label" = "Выбрать время";
+"change" = "Изменить";
+"confirm" = "Подтвердить";
+
+"day_label" = "День";
+"time_label" = "Время";
+
+"cancel_btn" = "Отмена";
+"ok_btn" = "ОК";
+
+/* Checkout */
+"delivery_for_someone_else" = "Доставка другому лицу";
+"apartment" = "Кв./Офис";
+"door_phone" = "Домофон";
+"instructions_for_driver" = "Инструкции для водителя";
+"recipient_name" = "Имя получателя";
+"recipient_phone" = "Номер телефона получателя";
+"items_in_order" = "Товары в заказе";
+"edit" = "Изменить";

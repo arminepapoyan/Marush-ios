@@ -29,6 +29,7 @@ struct CartView: View {
     // Remove confirmation dialog state (lifted here so dialog is full-screen)
     @State private var itemPendingRemoval: CartItem? = nil
     @State private var showRemoveConfirm = false
+    @State private var showCheckout = false
 
     let horizontalPadding = GlobalSettings.shared.horizontalPadding
 
@@ -94,6 +95,19 @@ struct CartView: View {
             syncQuantities(from: d.list)
             // Keep CartManager in sync so product grid and tab badge reflect actual server state
             CartManager.shared.load(from: d)
+        }
+        // ── Checkout bottom sheet ────────────────────────────────────────────────
+        .sheet(isPresented: $showCheckout) {
+            CheckoutView(
+                onDismiss: { showCheckout = false },
+                initialTotal: localTotal
+            )
+            .environmentObject(settings)
+            .environmentObject(userData)
+            .environmentObject(appData)
+            .presentationDetents([.large])
+            .presentationDragIndicator(.hidden)
+            .presentationCornerRadius(30)
         }
     }
 
@@ -199,9 +213,9 @@ struct CartView: View {
             .padding(.horizontal, horizontalPadding)
 
             ButtonView(
-                title: getLocalString(string: "next"),
+                title: getLocalString(string: "continue"),
                 showArrow: false,
-                action: { /* TODO: navigate to checkout */ }
+                action: { showCheckout = true }
             )
             .padding(.horizontal, horizontalPadding)
             .padding(.bottom, 16)
@@ -239,7 +253,7 @@ struct CartView: View {
 
     private func performRemove(item: CartItem?) {
         guard let item = item else { return }
-        let req = RemoveCartData(cart_id: item.cartId, use_bonus_amount: 0)
+        let req = RemoveCartData(product_id: item.productId, cart_id: item.cartId, use_bonus_amount: 0)
         RemoveFromCart(data: req) { response in
             DispatchQueue.main.async {
                 if let res = response {
@@ -316,11 +330,29 @@ struct CartItemRow: View {
     @State private var offset: CGFloat = 0
     @State private var isSwiped = false
 
-    /// Snapshot taken just before each optimistic quantity change, used for rollback.
-    @State private var prevQuantity: Int = 0
+    /// Quantity the server last confirmed — the rollback target for a whole burst of taps.
+    @State private var baselineQuantity: Int?
+    /// Debounced `cart/update` call, cancelled whenever the user taps again.
+    @State private var pendingUpdate: DispatchWorkItem?
+    /// Guards against a stale reply overwriting a newer tap.
+    @State private var updateGeneration = 0
+    /// Latches once a full swipe has fired, so it can't repeat within the same gesture.
+    @State private var didTriggerFullSwipe = false
 
     private let swipeThreshold: CGFloat = 40
     private let maxSwipeOffset: CGFloat = -80
+    /// Dragging past this offset opens the remove confirmation. Kept just inside `dragLimit`
+    /// so "drag until the card stops" always fires, whatever the row width.
+    private let fullSwipeThreshold: CGFloat = -130
+    /// How far the card may follow the finger.
+    private let dragLimit: CGFloat = -140
+    /// Rapid taps inside this window collapse into a single request.
+    private let updateDebounce: TimeInterval = 0.45
+
+    /// Increment required by the product (`cart_step`), never below 1.
+    private var step: Int { max(1, item.product.cartStep) }
+    /// Smallest quantity the product allows (`cart_min`), never below 1.
+    private var minQuantity: Int { max(1, item.product.cartMin) }
 
     var totalPrice: Double { item.price * Double(quantity) }
 
@@ -365,6 +397,7 @@ struct CartItemRow: View {
             .offset(x: offset)
         }
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .onDisappear { flushPendingUpdate() }
     }
 
     // MARK: - Swipe gesture (reused on image + text areas)
@@ -372,13 +405,27 @@ struct CartItemRow: View {
     private var swipeGesture: some View {
         SwipePanGesture(
             onChanged: { dx in
-                if isSwiped {
-                    offset = min(max(maxSwipeOffset + dx, maxSwipeOffset), 0)
-                } else {
-                    offset = dx < 0 ? max(dx, maxSwipeOffset) : 0
+                let next = dragOffset(for: dx)
+                offset = next
+
+                // Fire as soon as the card passes the threshold rather than waiting for the
+                // release: the finger often reaches the screen edge (or the gesture gets
+                // cancelled) before `onEnded` reports a translation this large.
+                if next <= fullSwipeThreshold && !didTriggerFullSwipe {
+                    didTriggerFullSwipe = true
+                    closeSwipe()
+                    onRemoveRequested?(item)
                 }
             },
-            onEnded: { dx in
+            onEnded: { _ in
+                // The full swipe already asked for removal — nothing left to settle.
+                if didTriggerFullSwipe {
+                    didTriggerFullSwipe = false
+                    return
+                }
+
+                let dx = offset - (isSwiped ? maxSwipeOffset : 0)
+
                 if isSwiped {
                     dx > swipeThreshold ? closeSwipe() : openSwipe()
                 } else {
@@ -401,7 +448,8 @@ struct CartItemRow: View {
                     .font(.system(size: 20, weight: .medium))
                     .foregroundColor(.white)
             }
-            .frame(width: abs(maxSwipeOffset))
+            // Grows with the drag so no gap shows behind the card on a full swipe.
+            .frame(width: max(abs(maxSwipeOffset), abs(offset)))
             .frame(maxHeight: .infinity)
         }
         .buttonStyle(.plain)
@@ -420,6 +468,12 @@ struct CartItemRow: View {
 
     // MARK: - Swipe helpers
 
+    /// Card offset for a finger translation, measured from the current resting position.
+    private func dragOffset(for dx: CGFloat) -> CGFloat {
+        let base = isSwiped ? maxSwipeOffset : 0
+        return min(max(base + dx, dragLimit), 0)
+    }
+
     private func openSwipe() {
         withAnimation(.easeInOut(duration: 0.25)) {
             offset = maxSwipeOffset
@@ -437,40 +491,82 @@ struct CartItemRow: View {
     // MARK: - Quantity actions
 
     private func decreaseQuantity() {
-        if quantity > 1 {
-            prevQuantity = quantity        // snapshot for potential rollback
-            quantity -= 1                  // optimistic update → localTotal refreshes instantly
-            callUpdateCart()
-        } else {
-            // Would reach 0 — remove instead
+        let next = quantity - step
+
+        // Landing exactly on zero means "remove from cart".
+        if next == 0 {
             closeSwipe()
             onRemoveRequested?(item)
+            return
         }
+
+        // Otherwise clamp to the product minimum, as Android does.
+        let clamped = max(next, minQuantity)
+        guard clamped != quantity else { return }   // already at the minimum — nothing to send
+
+        rememberBaseline()
+        quantity = clamped                          // optimistic → localTotal refreshes instantly
+        scheduleUpdate()
     }
 
     private func increaseQuantity() {
-        prevQuantity = quantity
-        quantity += 1
-        callUpdateCart()
+        rememberBaseline()
+        quantity += step
+        scheduleUpdate()
     }
 
-    /// Calls the UpdateCart API. On failure rolls back the binding via the callback.
-    private func callUpdateCart() {
-        let snap = prevQuantity          // capture before async dispatch
-        let req = CartUpdate(cart_id: item.cartId, count: quantity, use_bonus_amount: 0)
+    // MARK: - Debounced cart/update
+
+    /// Captures the pre-burst quantity once, so a failure can roll every tap back together.
+    private func rememberBaseline() {
+        if baselineQuantity == nil { baselineQuantity = quantity }
+    }
+
+    /// Collapses rapid +/- taps into a single request for the final quantity.
+    private func scheduleUpdate() {
+        pendingUpdate?.cancel()
+        let work = DispatchWorkItem { sendUpdate() }
+        pendingUpdate = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + updateDebounce, execute: work)
+    }
+
+    /// Sends the settled quantity. On failure rolls the binding back via the callback.
+    private func sendUpdate() {
+        pendingUpdate = nil
+        updateGeneration += 1
+        let generation = updateGeneration
+        let rollback = baselineQuantity ?? quantity
+
+        let req = CartUpdate(
+            product_id: item.productId,
+            cart_id: item.cartId,
+            count: quantity,
+            use_bonus_amount: 0
+        )
+
         UpdateCart(data: req) { response in
             DispatchQueue.main.async {
+                // A newer tap superseded this request — let the later reply decide.
+                guard generation == updateGeneration else { return }
+
                 if response == nil {
-                    // Roll back optimistic update
-                    onQuantityRevertNeeded?(snap)
+                    onQuantityRevertNeeded?(rollback)
                     errorMess = getLocalString(string: "wrond_command")
                     showAlert = true
                 }
-                // On success: quantity binding + localTotal are already correct — nothing to do.
-                // We deliberately do NOT replace cartInfo here because cart/update may return
-                // an incomplete CartResponse (empty list, count = 0) that would break the UI.
+                baselineQuantity = nil
+                // On success the binding + localTotal are already correct. We deliberately do
+                // NOT replace cartInfo here because cart/update may return an incomplete
+                // CartResponse (empty list, count = 0) that would break the UI.
             }
         }
+    }
+
+    /// Flushes a still-pending change so a quantity tap is never lost on navigation.
+    private func flushPendingUpdate() {
+        guard pendingUpdate != nil else { return }
+        pendingUpdate?.cancel()
+        sendUpdate()
     }
 }
 

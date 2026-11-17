@@ -49,12 +49,18 @@ struct ProductsGrid: View {
             //            }
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 16){
-                    ForEach(products) { product in
-                        ProductCard(isLoading: $isLoading, product: product, outline: outline, width: cardWidth)
-                            .onTapGesture {
-                                settings.dialogProducId = product.id
-                                settings.showProductDialog = true
-                            }
+                    if isLoading {
+                        ForEach(0..<3, id: \.self) { _ in
+                            productsSliderItemShimmer(width: cardWidth)
+                        }
+                    } else {
+                        ForEach(products) { product in
+                            ProductCard(isLoading: $isLoading, product: product, outline: outline, width: cardWidth)
+                                .onTapGesture {
+                                    settings.dialogProducId = product.id
+                                    settings.showProductDialog = true
+                                }
+                        }
                     }
                 }
             }

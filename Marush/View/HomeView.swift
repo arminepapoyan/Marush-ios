@@ -85,7 +85,14 @@ struct HomeView: View {
                             VStack(spacing: 20) {
                                 VStack(spacing: 20) {
                                     categoriesSlider
-                                    if !appData.productCategories.isEmpty {
+                                    if isLoading {
+                                        // Every real section is gated on a non-empty array,
+                                        // so while loading nothing rendered at all. Stand in
+                                        // with two category blocks of card-sized placeholders.
+                                        ForEach(0..<2, id: \.self) { _ in
+                                            CategoryBlockShimmer()
+                                        }
+                                    } else if !appData.productCategories.isEmpty {
                                         ForEach(appData.productCategories) { categoryItem in
                                             VStack(spacing: 10) {
                                                 ProductsGrid(

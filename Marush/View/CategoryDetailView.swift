@@ -226,15 +226,15 @@ struct CategoryFilterSheet: View {
                 .padding(.top, 20)
                 .padding(.bottom, 8)
 
-            Text(getLocalString(string: "what_do_you_want_to_view_first"))
-                .font(.Lato(size: 14))
-                .foregroundColor(Color(UIColor(named: "ColorDark")!).opacity(0.55))
-                .padding(.horizontal, 24)
-                .padding(.bottom, 16)
-
-            Divider()
-                .padding(.horizontal, 24)
-                .padding(.bottom, 8)
+//            Text(getLocalString(string: "what_do_you_want_to_view_first"))
+//                .font(.Lato(size: 14))
+//                .foregroundColor(Color(UIColor(named: "ColorDark")!).opacity(0.55))
+//                .padding(.horizontal, 24)
+//                .padding(.bottom, 16)
+//
+//            Divider()
+//                .padding(.horizontal, 24)
+//                .padding(.bottom, 8)
 
             VStack(spacing: 0) {
                 ForEach(options, id: \.0) { option in

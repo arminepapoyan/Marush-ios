@@ -218,7 +218,7 @@ struct CartView: View {
                 action: { showCheckout = true }
             )
             .padding(.horizontal, horizontalPadding)
-            .padding(.bottom, 16)
+            .padding(.bottom, 32)
         }
         .padding(.top, 14)
         .background(

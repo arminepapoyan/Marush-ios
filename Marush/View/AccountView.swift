@@ -178,8 +178,7 @@ struct menuList: View {
                 ),
 
                 showDialog: .constant(false),
-                activeDestination: $activeDestination,
-                showsBottomBorder: false
+                activeDestination: $activeDestination
             )
 //            menuItem(title: getLocalString(string: "favorites"),        destination: AnyView(WishlistView()),                                                         showDialog: .constant(false), activeDestination: $activeDestination)
 //            menuItem(title: getLocalString(string: "rewards"),          destination: AnyView(RewardsView(dismissArrow: true).environmentObject(settings)),           showDialog: .constant(false), activeDestination: $activeDestination)

@@ -127,34 +127,73 @@ struct homeSliderShimmer: View{
         .shimmering()
     }
 }
+/// Placeholder shaped exactly like `ProductCard`: 200pt image, price line, name line,
+/// same corner radius and outline — so nothing shifts once the real data lands.
 struct productsSliderItemShimmer: View{
+    var width: CGFloat? = nil
+
+    private var shimmerColor: Color { Color(UIColor(named: "ColorShimmer")!) }
+
     var body: some View{
-        VStack(spacing: 6) {
-            RoundedRectangle(cornerRadius: 15)
-                .fill(Color(UIColor(named: "ColorShimmer")!))
-                .frame(height: 120)
+        VStack(alignment: .leading, spacing: 8) {
+            Rectangle()
+                .fill(shimmerColor)
+                .frame(height: 200)
                 .frame(maxWidth: .infinity)
-            
-            // Product Name
-            Rectangle()
-                .fill(Color(UIColor(named: "ColorShimmer")!))
-                .frame(width: 100, height: 10)
-            
-            // Product Price
-            Rectangle()
-                .fill(Color(UIColor(named: "ColorShimmer")!))
-                .frame(width: 50, height: 10)
+
+            VStack(alignment: .leading, spacing: 5) {
+                Rectangle()
+                    .fill(shimmerColor)
+                    .frame(width: 60, height: 14)
+                Rectangle()
+                    .fill(shimmerColor)
+                    .frame(height: 14)
+                    .frame(maxWidth: .infinity)
+            }
+            .padding(.horizontal, 10)
+            .padding(.bottom, 15)
         }
-//        .frame(width: 120)
-        .frame(maxWidth: .infinity)
-        .frame(maxHeight: .infinity)
-        .padding(10)
+        .frame(width: width)
         .background(.white)
-        .cornerRadius(11)
+        .cornerRadius(10)
         .padding(1)
-        .background(RoundedRectangle(cornerRadius: 11).stroke(Color(UIColor(named: "ColorDark")!).opacity(0.3), lineWidth: 1))
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color(UIColor(named: "ColorDark")!).opacity(0.1), lineWidth: 1)
+        )
         .redacted(reason: .placeholder)
         .shimmering()
+    }
+}
+
+/// One home-page category block while loading: section title + a row of card placeholders.
+struct CategoryBlockShimmer: View {
+    private var cardWidth: CGFloat {
+        let screenWidth = UIScreen.main.bounds.width
+        let horizontalPadding = GlobalSettings.shared.horizontalPadding * 2
+        let spacing: CGFloat = 16
+        return (screenWidth - horizontalPadding - spacing) / 2
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 15) {
+            Rectangle()
+                .fill(Color(UIColor(named: "ColorShimmer")!))
+                .frame(width: 150, height: 18)
+                .cornerRadius(4)
+                .redacted(reason: .placeholder)
+                .shimmering()
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: 16) {
+                    ForEach(0..<3, id: \.self) { _ in
+                        productsSliderItemShimmer(width: cardWidth)
+                    }
+                }
+            }
+            .disabled(true)
+        }
+        .padding(.vertical)
     }
 }
 

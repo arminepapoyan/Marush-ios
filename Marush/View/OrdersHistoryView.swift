@@ -24,8 +24,8 @@ struct OrdersHistoryView: View {
 
     // MARK: - Filtered orders per tab
 
-    private var filteredOrders: [Order] {
-        switch selectedTab {
+    private func orders(for tab: Int) -> [Order] {
+        switch tab {
         case 0:  return ordersVM.data.filter { !($0.isFinished ?? false) && !($0.isCancelled ?? false) }
         case 1:  return ordersVM.data.filter {  ($0.isFinished ?? false) }
         case 2:  return ordersVM.data.filter {  ($0.isCancelled ?? false) }
@@ -70,10 +70,22 @@ struct OrdersHistoryView: View {
 
                         if isLoading {
                             shimmerList
-                        } else if filteredOrders.isEmpty {
-                            emptyState
                         } else {
-                            orderList
+                            // Paging TabView gives the swipe-between-statuses gesture
+                            // for free, and keeps the tab row in sync both ways.
+                            TabView(selection: $selectedTab) {
+                                ForEach(0..<3, id: \.self) { tab in
+                                    Group {
+                                        if orders(for: tab).isEmpty {
+                                            emptyState(for: tab)
+                                        } else {
+                                            orderList(for: tab)
+                                        }
+                                    }
+                                    .tag(tab)
+                                }
+                            }
+                            .tabViewStyle(.page(indexDisplayMode: .never))
                         }
                     }
                     
@@ -108,13 +120,21 @@ struct OrdersHistoryView: View {
     // MARK: - Tab row
 
     private var tabRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                tabButton(index: 0, title: getLocalString(string: "active"),    icon: "ic-active")
-                tabButton(index: 1, title: getLocalString(string: "completed"), icon: "ic-completed")
-                tabButton(index: 2, title: getLocalString(string: "canceled"),  icon: "ic-canceled")
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    tabButton(index: 0, title: getLocalString(string: "active"),    icon: "ic-active")
+                    tabButton(index: 1, title: getLocalString(string: "completed"), icon: "ic-completed")
+                    tabButton(index: 2, title: getLocalString(string: "canceled"),  icon: "ic-canceled")
+                }
+                .padding(.horizontal, GlobalSettings.shared.horizontalPadding)
             }
-            .padding(.horizontal, GlobalSettings.shared.horizontalPadding)
+            // Swiping the pages can land on a tab that sits off-screen — bring it into view.
+            .onChange(of: selectedTab) { newValue in
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    proxy.scrollTo(newValue, anchor: .center)
+                }
+            }
         }
     }
 
@@ -158,14 +178,15 @@ struct OrdersHistoryView: View {
             )
         }
         .buttonStyle(.plain)
+        .id(index)
     }
 
     // MARK: - Order list
 
-    private var orderList: some View {
+    private func orderList(for tab: Int) -> some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 12) {
-                ForEach(filteredOrders) { order in
+                ForEach(orders(for: tab)) { order in
                     OrderCard(order: order) {
                         selectedOrder = order
                         withAnimation(.easeInOut(duration: 0.28)) { showOrderView = true }
@@ -193,14 +214,14 @@ struct OrdersHistoryView: View {
 
     // MARK: - Empty state
 
-    private var emptyState: some View {
+    private func emptyState(for tab: Int) -> some View {
         VStack(spacing: 16) {
 //            Spacer()
-            Text(emptyTitle)
+            Text(emptyTitle(for: tab))
                 .font(.LatoBold(size: 18))
                 .foregroundColor(Color(UIColor(named: "ColorDark")!))
                 .multilineTextAlignment(.center)
-            Text(emptySubtitle)
+            Text(getLocalString(string: "no_orders_desc"))
                 .font(.Lato(size: 15))
                 .foregroundColor(Color(UIColor(named: "ColorDark")!).opacity(0.55))
                 .multilineTextAlignment(.center)
@@ -223,19 +244,11 @@ struct OrdersHistoryView: View {
         .padding(.top, 30)
     }
 
-    private var emptyTitle: String {
-        switch selectedTab {
+    private func emptyTitle(for tab: Int) -> String {
+        switch tab {
         case 1:  return getLocalString(string: "no_completed_orders")
         case 2:  return getLocalString(string: "no_canceled_orders")
         default: return getLocalString(string: "no_active_orders")
-        }
-    }
-
-    private var emptySubtitle: String {
-        switch selectedTab {
-        case 1:  return getLocalString(string: "no_orders_desc")
-        case 2:  return getLocalString(string: "no_orders_desc")
-        default: return getLocalString(string: "no_orders_desc")
         }
     }
 

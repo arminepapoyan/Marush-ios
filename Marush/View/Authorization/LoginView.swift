@@ -13,6 +13,8 @@ struct LoginView: View {
     @EnvironmentObject var appData: AppDataViewModel
     @EnvironmentObject var settings: UserSettings
 
+    /// Phone is the default sign-in method; the picker switches to email.
+    @State private var loginByEmail = false
     @State private var email: String = ""
     @State private var password: String = ""
     @State private var showText: Bool = false
@@ -71,13 +73,23 @@ struct LoginView: View {
             VStack(spacing: 24){
                 headerSection
                 VStack(spacing: 12){
-//                    emailInput
-                    phoneInput
-                        .focused($focusedField, equals: .phone)
+                    loginMethodPicker
+
+                    if loginByEmail {
+                        emailInput
+                            .focused($focusedField, equals: .email)
                             .submitLabel(.next)
                             .onSubmit {
                                 focusedField = .password
                             }
+                    } else {
+                        phoneInput
+                            .focused($focusedField, equals: .phone)
+                            .submitLabel(.next)
+                            .onSubmit {
+                                focusedField = .password
+                            }
+                    }
                     passwordInput
                         .focused($focusedField, equals: .password)
                             .submitLabel(.done)
@@ -102,6 +114,49 @@ struct LoginView: View {
     }
     
     // MARK: - UI Components
+
+    /// Segmented control: a grey track with a white thumb that slides to the
+    /// selected side. Radius matches the inputs and buttons (30).
+    private var loginMethodPicker: some View {
+        HStack(spacing: 0) {
+            loginMethodTab(title: getLocalString(string: "phone_number"), isEmail: false)
+            loginMethodTab(title: getLocalString(string: "email"),        isEmail: true)
+        }
+        .padding(4)
+        .background(Color(UIColor(named: "F9F9F9")!))
+        .overlay(
+            RoundedRectangle(cornerRadius: 30)
+                .stroke(Color(UIColor(named: "CustomGray")!), lineWidth: 1)
+        )
+        .cornerRadius(30)
+        .padding(.bottom, 4)
+    }
+
+    private func loginMethodTab(title: String, isEmail: Bool) -> some View {
+        let isSelected = loginByEmail == isEmail
+        return Button {
+            withAnimation(.easeInOut(duration: 0.22)) {
+                loginByEmail = isEmail
+                focusedField = nil
+            }
+        } label: {
+            Text(title)
+                .font(isSelected ? .PoppinsMedium(size: 14) : .Poppins(size: 14))
+                .foregroundColor(isSelected
+                                 ? Color(UIColor(named: "ColorDark")!)
+                                 : Color(UIColor(named: "8C95AA")!))
+                .lineLimit(1)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 9)
+                .background(
+                    // Only the active half carries the white thumb.
+                    Capsule().fill(isSelected ? Color.white : Color.clear)
+                )
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
     private var headerSection: some View {
         VStack(alignment: .leading) {
             Text("sign_in")
@@ -225,7 +280,15 @@ struct LoginView: View {
 //        }
 //
         
-        if phoneNumber.isEmpty {
+        if loginByEmail {
+            if email.trimmingAllSpaces().isEmpty {
+                errorEmail = true
+                errorEmailMessage = getLocalString(string: "email_field_is_required")
+                error_form = true
+            } else {
+                errorEmail = false
+            }
+        } else if phoneNumber.isEmpty {
             wrongphoneMessage = getLocalString(string: "phone_field_is_required")
             wrongphone = true
             error_form = true
@@ -240,20 +303,22 @@ struct LoginView: View {
             wrongPassword = 0
         }
         
-        phoneNumber =  phoneNumber.trimmingAllSpaces()
-        phone_user = "\(countryCode)\(phoneNumber)".trimmingAllSpaces()
-        
-        self.phoneField = PhoneNumberTextFieldView(phoneNumber: .constant(phone_user))
-        do {
-            self.phoneField?.getCurrentText()
-            let validatedPhoneNumber = try phoneNumberKit.parse(phone_user)
-            
-            // Integrate with your login/registration system here...
-        }
-        catch {
-            error_form = true
-            wrongphone = true
-            wrongphoneMessage = getLocalString(string: "phone_number_is_wrong")
+        if !loginByEmail {
+            phoneNumber =  phoneNumber.trimmingAllSpaces()
+            phone_user = "\(countryCode)\(phoneNumber)".trimmingAllSpaces()
+
+            self.phoneField = PhoneNumberTextFieldView(phoneNumber: .constant(phone_user))
+            do {
+                self.phoneField?.getCurrentText()
+                let validatedPhoneNumber = try phoneNumberKit.parse(phone_user)
+
+                // Integrate with your login/registration system here...
+            }
+            catch {
+                error_form = true
+                wrongphone = true
+                wrongphoneMessage = getLocalString(string: "phone_number_is_wrong")
+            }
         }
         
         
@@ -267,7 +332,9 @@ struct LoginView: View {
         errorPassword = false
         errorEmail = false
         
-        login(phone: phone_user, password: password) { response in
+        login(phone: loginByEmail ? "" : phone_user,
+              email: loginByEmail ? email.trimmingAllSpaces() : "",
+              password: password) { response in
             signin_loading = false
             if response?.status == 200 {
                 settings.account_uid = response?.token ?? ""

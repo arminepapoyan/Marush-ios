@@ -9,15 +9,20 @@ import Foundation
 
 // MARK: - API Functions
 // Login user
-func login(phone: String, password: String, completion: @escaping (Message?) -> Void) {
+/// Signs in with either identifier. Only the one in use is sent, matching the
+/// `errors.phone` / `errors.email` keys the API answers with.
+func login(phone: String, email: String = "", password: String, completion: @escaping (Message?) -> Void) {
     let url = NetworkManager.shared.constructURL(endpoint: "login/run")
-    let body: [String: Any] = [
+    var body: [String: Any] = [
         "device_id": getDeviceId(),
-//        "email": email,
-        "phone": phone,
         "password": password,
         "from_app": "ios"
     ]
+    if email.isEmpty {
+        body["phone"] = phone
+    } else {
+        body["email"] = email
+    }
     
     NetworkManager.shared.performRequest(url: url, body: body){ (result: Message?) in
         completion(result)

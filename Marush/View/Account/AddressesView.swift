@@ -156,8 +156,9 @@ struct AddressFormView: View {
     @State private var district   = ""
     @State private var suggestions: [SearchAddress] = []
     @State private var suggestWork: DispatchWorkItem?
-    /// Set while we fill the field from a tapped suggestion, so that does not re-query.
-    @State private var isApplyingSuggestion = false
+    /// Address value written by us (initial load or a tapped suggestion). The matching
+    /// `onChange` is skipped so it neither re-queries nor clears the coordinates.
+    @State private var suppressSuggestFor: String? = nil
 
     @FocusState private var focused: FocusFields?
 
@@ -175,27 +176,31 @@ struct AddressFormView: View {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 20) {
 
-                    // Հասցե — full width
-                    inputField(
-                        placeholder: getLocalString(string: "address"),
-                        text: $address,
-                        showErrorImg: $wrongAddress,
-                        errorMess: $wrongAddressMessage,
-                        isSecure: false,
-                        showLabel: true
-                    )
-                    .focused($focused, equals: .address)
-                    .submitLabel(.next)
-                    .onSubmit { focused = .building }
-                    .onChange(of: address) { _ in scheduleSuggest() }
-                    // Floating dropdown: the alignment guide pins the list's top edge to
-                    // the field's bottom, so it hovers instead of pushing the form down.
-                    .overlay(alignment: .bottomLeading) {
-                        if !suggestions.isEmpty {
-                            suggestionsDropdown
-                                .alignmentGuide(VerticalAlignment.bottom) { $0[.top] }
-                                .offset(y: 4)
+                    // Հասցե — full width, with the suggestions hanging below it
+                    VStack(spacing: 0) {
+                        inputField(
+                            placeholder: getLocalString(string: "address"),
+                            text: $address,
+                            showErrorImg: $wrongAddress,
+                            errorMess: $wrongAddressMessage,
+                            isSecure: false,
+                            showLabel: true
+                        )
+                        .focused($focused, equals: .address)
+                        .submitLabel(.next)
+                        .onSubmit { focused = .building }
+                        .onChange(of: address) { _ in scheduleSuggest() }
+
+                        // Zero-height host directly beneath the field: the dropdown
+                        // overflows downward out of it, so it always starts below the
+                        // field and still takes no layout space.
+                        ZStack(alignment: .top) {
+                            if !suggestions.isEmpty {
+                                suggestionsDropdown
+                                    .padding(.top, 4)
+                            }
                         }
+                        .frame(height: 0, alignment: .top)
                     }
                     .zIndex(1)
 
@@ -360,8 +365,9 @@ struct AddressFormView: View {
                 }
             }
         }
-        // Caps the list so a long result set cannot cover the whole form.
-        .frame(maxHeight: 240)
+        // Explicit height: an overlay proposes the field's size, which would otherwise
+        // squash the scroll view. Capped so a long result set cannot fill the form.
+        .frame(height: min(CGFloat(suggestions.count) * 56, 240))
         .background(Color.white)
         .cornerRadius(12)
         .overlay(
@@ -375,14 +381,17 @@ struct AddressFormView: View {
 
     private func loadValues() {
         id                 = selectedAddress.id
-        address            = selectedAddress.address
-        building           = selectedAddress.building
-        apartment          = selectedAddress.apartment
-        entrance           = selectedAddress.entrance
-        floor              = selectedAddress.floor
+        // Some records are stored with HTML markup — never show it raw in a field.
+        address            = selectedAddress.address.strippingHTML
+        // Editing starts from a saved address: keep its pin instead of re-querying.
+        suppressSuggestFor = address
+        building           = selectedAddress.building.strippingHTML
+        apartment          = selectedAddress.apartment.strippingHTML
+        entrance           = selectedAddress.entrance.strippingHTML
+        floor              = selectedAddress.floor.strippingHTML
         isDefault          = selectedAddress.isDefault
-        doorCode           = selectedAddress.domofon
-        driverInstructions = selectedAddress.comment
+        doorCode           = selectedAddress.domofon.strippingHTML
+        driverInstructions = selectedAddress.comment.strippingHTML
         latitude           = selectedAddress.latitude
         longitude          = selectedAddress.longitude
         city               = selectedAddress.city
@@ -394,7 +403,11 @@ struct AddressFormView: View {
 
     /// Debounces typing into one `yandex/autosuggest` call.
     private func scheduleSuggest() {
-        guard !isApplyingSuggestion else { return }
+        // Our own write — keep the coordinates that came with it.
+        if let suppressed = suppressSuggestFor, suppressed == address {
+            suppressSuggestFor = nil
+            return
+        }
 
         // Typing again invalidates a previously resolved pin.
         latitude = ""; longitude = ""; city = ""; state = ""; district = ""
@@ -413,7 +426,12 @@ struct AddressFormView: View {
                         suggestions = []
                         return
                     }
-                    suggestions = result.address
+                    // Yandex highlights the matched part with <b> tags — clean them here
+                    // so neither the list, the field, nor the geocode query sees markup.
+                    suggestions = result.address.map {
+                        SearchAddress(title: $0.title.strippingHTML,
+                                      address: $0.address.strippingHTML)
+                    }
                 }
             }
         }
@@ -424,15 +442,13 @@ struct AddressFormView: View {
     /// Resolves the tapped suggestion into coordinates via `yandex/geocode`.
     private func apply(_ suggestion: SearchAddress) {
         suggestWork?.cancel()
-        isApplyingSuggestion = true
+        suppressSuggestFor = suggestion.address
         address = suggestion.address
         suggestions = []
         hideKeyboard()
 
         GeocodeAddressLookup(search: suggestion.address) { result in
             DispatchQueue.main.async {
-                isApplyingSuggestion = false
-
                 guard let geo = result?.address, result?.status != 500,
                       !geo.latitude.isEmpty, !geo.longitude.isEmpty,
                       !geo.city.isEmpty, !geo.state.isEmpty else {
@@ -576,16 +592,21 @@ struct AddressItem: View {
             HStack(alignment: .center, spacing: 14) {
 
                 // Left address icon — swipe gesture lives here
-                Image("ic-address-list")
+                // Default address gets the solid bookmark, the rest the outline one —
+                // the base asset is stroke-only, so tinting alone cannot fill it.
+                Image(address.isDefault == 1 ? "ic-address-list-filled" : "ic-address-list")
+                    .renderingMode(.template)
                     .resizable()
                     .scaledToFit()
                     .frame(width: 22, height: 26)
-                    .foregroundColor(Color.gray.opacity(0.45))
+                    .foregroundColor(address.isDefault == 1
+                                     ? Color(UIColor(named: "ColorPrimary")!)
+                                     : Color.gray.opacity(0.45))
                     .overlay(swipeGesture)
 
                 // Address text — swipe gesture lives here too
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(address.address)
+                    Text(address.address.strippingHTML)
                         .font(.LatoBold(size: 15))
                         .foregroundColor(Color(UIColor(named: "ColorDark")!))
                         .lineLimit(1)
@@ -594,11 +615,6 @@ struct AddressItem: View {
                             .font(.Lato(size: 13))
                             .foregroundColor(.gray)
                             .lineLimit(1)
-                    }
-                    if address.isDefault == 1 {
-                        Text(getLocalString(string: "default"))
-                            .font(.Lato(size: 11))
-                            .foregroundColor(Color(UIColor(named: "ColorPrimary")!))
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -792,7 +808,8 @@ struct AddressPickerSheet: View {
     private func pickerRow(_ address: Address) -> some View {
         let subtitle = buildSubtitle(address)
         return HStack(spacing: 14) {
-            Image("ic-address-list")
+            Image(address.isDefault == 1 ? "ic-address-list-filled" : "ic-address-list")
+                .renderingMode(.template)
                 .resizable()
                 .scaledToFit()
                 .frame(width: 20, height: 22)

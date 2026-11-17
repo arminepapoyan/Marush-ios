@@ -151,7 +151,7 @@
 "points" = "Points";
 "rewards_available" = "Rewards available";
 "rewards_you_can_get_with_points" = "Rewards you can get with Points";
-"your_cart_is_empty" = "Your cart is empty";
+"your_cart_is_empty" = "Ваша корзина пуста";
 "your_cart_is_empty_go_back_to_thi_list_od_products" = "Your shopping cart is empty, go back to the list of products and select the desired product.";
 "shop" = "Shop";
 "shops" = "Shops";
@@ -310,3 +310,4 @@
 "field_is_required" = "Поле обязательно для заполнения";
 "data_saved_successfully" = "Данные успешно сохранены";
 "confirmed" = "Подтверждено";
+"want_to_add_something" = "Хотите что-нибудь добавить?";

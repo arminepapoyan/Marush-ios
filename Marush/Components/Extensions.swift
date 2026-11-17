@@ -561,3 +561,51 @@ extension View {
         self.modifier(KeyboardAwareModifier())
     }
 }
+
+extension String {
+    /// Some values arrive from the database as HTML — tags and escaped entities.
+    /// Rendering those verbatim in a text field shows the markup, so strip the tags
+    /// and decode the entities (including the numeric ones Armenian text often uses).
+    var strippingHTML: String {
+        // Line-breaking tags become a space, otherwise the words either side get glued
+        // together ("53Մուտք"). Everything else is simply removed.
+        var result = replacingOccurrences(
+            of: "<br\\s*/?>|</p>|</div>|</li>",
+            with: " ",
+            options: [.regularExpression, .caseInsensitive]
+        )
+        result = result.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
+
+        let named = [
+            "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": "\"",
+            "&apos;": "'", "&#39;": "'", "&nbsp;": " "
+        ]
+        for (entity, character) in named {
+            result = result.replacingOccurrences(of: entity, with: character)
+        }
+
+        result = result.decodingNumericEntities(pattern: "&#([0-9]+);", radix: 10)
+        result = result.decodingNumericEntities(pattern: "&#[xX]([0-9a-fA-F]+);", radix: 16)
+
+        // Collapse any runs of whitespace the tag removal left behind.
+        result = result.replacingOccurrences(of: "\\s{2,}", with: " ", options: .regularExpression)
+
+        return result.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Replaces `&#1377;` / `&#x561;` style escapes with the character they encode.
+    private func decodingNumericEntities(pattern: String, radix: Int) -> String {
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return self }
+
+        var output = self
+        let matches = regex.matches(in: self, range: NSRange(startIndex..., in: self))
+        for match in matches.reversed() {
+            guard let full = Range(match.range, in: self),
+                  let digits = Range(match.range(at: 1), in: self),
+                  let code = UInt32(self[digits], radix: radix),
+                  let scalar = Unicode.Scalar(code) else { continue }
+            output.replaceSubrange(full, with: String(Character(scalar)))
+        }
+        return output
+    }
+}

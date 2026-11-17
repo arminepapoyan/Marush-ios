@@ -995,6 +995,13 @@ struct CheckoutView: View {
                 }
                 if deliveryDate.isEmpty { deliveryDate = response?.deliveryDefaultDate ?? "" }
                 if deliveryTime.isEmpty { deliveryTime = response?.deliveryDefaultTime ?? "" }
+                // Android falls back to today when the API sends no default date, and the
+                // order is rejected without a slot — so never leave the date empty.
+                if deliveryDate.isEmpty {
+                    let fmt = DateFormatter()
+                    fmt.dateFormat = "yyyy-MM-dd"
+                    deliveryDate = fmt.string(from: Date())
+                }
                 // If delivery is disabled, force pickup
                 if response?.disableDelivery == true { isDelivery = 0 }
             }
@@ -1052,8 +1059,10 @@ struct CheckoutView: View {
             billing_entrance:  entrance,
             billing_floor:     floor,
             billing_domofon:   doorPhone,
-            delivery_date:     isAsap == 1 ? "" : deliveryDate,
-            delivery_time:     isAsap == 1 ? "" : deliveryTime,
+            // Sent for ASAP too: the API validates the slot regardless of `is_asap`,
+            // and Android likewise always posts the defaults from `cart/checkout`.
+            delivery_date:     deliveryDate,
+            delivery_time:     deliveryTime,
             payment_method:    selectedPaymentKey,
             use_bonus_amount:  useBonusAmount,
             billing_name:      billingName,
@@ -1071,11 +1080,57 @@ struct CheckoutView: View {
             user_card_id:      selectedCardId
         )
 
+        print("""
+        🧾 order/add → is_delivery: \(model.is_delivery), is_asap: \(model.is_asap), \
+        shop_id: '\(model.shop_id)', payment_method: '\(model.payment_method)'
+           address: '\(model.billing_address)' bld:'\(model.billing_building)' \
+        apt:'\(model.billing_apartment)' ent:'\(model.billing_entrance)' flr:'\(model.billing_floor)'
+           city:'\(model.billing_city)' state:'\(model.billing_state)' \
+        district:'\(model.billing_district)'
+           lat:'\(model.billing_latitude)' lng:'\(model.billing_longitude)'
+           date:'\(model.delivery_date)' time:'\(model.delivery_time)'
+           name:'\(model.billing_name)' lastname:'\(model.billing_lastname)' \
+        phone:'\(model.billing_phone)' email:'\(model.billing_email)'
+        """)
+
         Checkout(data: model) { response in
             DispatchQueue.main.async {
                 isPlacingOrder = false
-                guard let res = response, res.status == 200 else {
-                    errorMessage = response?.message ?? getLocalString(string: "wrond_command")
+
+                guard let res = response else {
+                    print("🧾 order/add ← nil (network or decode failure — see the ❌ log above)")
+                    errorMessage = getLocalString(string: "wrond_command")
+                    showError = true
+                    return
+                }
+
+                let e = res.errors
+                print("""
+                🧾 order/add ← status: \(res.status), order_id: \(res.order_id.map(String.init) ?? "-")
+                   title: '\(res.title ?? "-")'  message: '\(res.message ?? "-")'
+                   url: '\(res.url ?? "-")'  redirect_url: '\(res.redirect_url ?? "-")'
+                   errors → payment_method:'\(e?.payment_method ?? "-")' shop_id:'\(e?.shop_id ?? "-")' \
+                billing_address:'\(e?.billing_address ?? "-")' delivery_time:'\(e?.delivery_time ?? "-")'
+                           name:'\(e?.name ?? "-")' lastname:'\(e?.lastname ?? "-")' \
+                phone:'\(e?.phone ?? "-")' email:'\(e?.email ?? "-")'
+                """)
+
+                guard res.status == 200 else {
+                    // `message` is often empty while the real reason sits in `errors`.
+                    let fieldError = [
+                        res.errors?.delivery_time,
+                        res.errors?.billing_address,
+                        res.errors?.shop_id,
+                        res.errors?.payment_method,
+                        res.errors?.phone,
+                        res.errors?.name,
+                        res.errors?.lastname,
+                        res.errors?.email
+                    ].compactMap { $0 }.first { !$0.isEmpty }
+
+                    errorMessage = fieldError
+                        ?? (res.message?.isEmpty == false ? res.message! : nil)
+                        ?? getLocalString(string: "wrond_command")
                     showError = true
                     return
                 }

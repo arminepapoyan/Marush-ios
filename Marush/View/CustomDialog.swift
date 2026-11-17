@@ -18,6 +18,24 @@ struct CustomDialog: View {
     let action: () -> ()
     @State private var offset: CGFloat = 100
     var closeOutside: Bool = true
+
+    private var isSuccess: Bool { icone_type == 1 }
+
+    /// `ic-error` / `ic-success` were never added to the catalogue — these are the
+    /// same marks the orders tabs use, so the language stays consistent.
+    private var iconBadge: some View {
+        Image(isSuccess ? "ic-completed" : "ic-canceled")
+            .resizable()
+            .scaledToFit()
+            .frame(width: 26, height: 26)
+            .padding(14)
+            .background(
+                Circle().fill(
+                    (isSuccess ? Color(UIColor(named: "ColorDark")!)
+                               : Color(UIColor(named: "ColorPrimary")!)).opacity(0.08)
+                )
+            )
+    }
     var body: some View {
         ZStack {
             Color(.black)
@@ -28,27 +46,44 @@ struct CustomDialog: View {
                     }
                 }
             
-            VStack(alignment: .center, spacing: 15) {
-                
-//                VStack(spacing: 20){
-                    Image(icone_type == 1 ? "ic-success" : "ic-error")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height: 25)
+            VStack(alignment: .center, spacing: 18) {
+
+                if message.isEmpty {
+                    // Title only — icon sits above, everything centred.
+                    iconBadge
                     if !title.isEmpty {
                         Text(title)
-                            .font(.PoppinsBold(size: 15))
+                            .font(.PoppinsBold(size: 16))
+                            .foregroundColor(Color(UIColor(named: "ColorDark")!))
+                            .multilineTextAlignment(.center)
                     }
-//                }
-                htmlToText(htmlString: "\(message)", fontSize: 16)
-                    .font(.Poppins(size: 14))
-                    .multilineTextAlignment(.center)
-                
-                ButtonView(showLoading: .constant(false), isDisabled: .constant(false), title: "OK"){
+                } else {
+                    // Title plus body — icon to the left of the text block.
+                    HStack(alignment: .top, spacing: 14) {
+                        iconBadge
+                        VStack(alignment: .leading, spacing: 4) {
+                            if !title.isEmpty {
+                                Text(title)
+                                    .font(.PoppinsBold(size: 16))
+                                    .foregroundColor(Color(UIColor(named: "ColorDark")!))
+                            }
+                            htmlToText(htmlString: "\(message)", fontSize: 15)
+                                .font(.Poppins(size: 14))
+                                .multilineTextAlignment(.leading)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+
+                ButtonView(
+                    showLoading: .constant(false),
+                    isDisabled: .constant(false),
+                    title: buttonTitle.isEmpty ? "OK" : buttonTitle,
+                    showArrow: false
+                ) {
                     close()
                     action()
                 }
-                .frame(maxWidth: 150)
             }
             .frame(minWidth: UIScreen.main.bounds.width / 1.5)
             .fixedSize(horizontal: false, vertical: true)

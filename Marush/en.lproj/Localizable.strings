@@ -293,3 +293,20 @@
 "recipient_phone" = "Recipient phone number";
 "items_in_order" = "Items in the order";
 "edit" = "Edit";
+"asap_estimate" = "50-60 min";
+"choose_a_pick_up_location" = "Choose where you want to pick up the order";
+"choose_address_from_the_suggested_list" = "Choose address from the suggested list";
+"sorry_we_dont_deliver_to" = "Sorry, we don't deliver to:";
+"our_working_hours" = "Our working hours are 11:00 - 23:50";
+
+/* Order confirmed */
+"order_confirmed" = "Order confirmed!";
+"order_placed_successfully" = "Your order has been placed successfully";
+"will_be_delivered_by" = "Will be delivered by %@";
+"will_be_ready_by" = "Will be ready by %@";
+"track_my_order" = "Track my order";
+"payment_not_processed" = "Payment was not processed";
+"support_note" = "If you have any questions, please reach out directly to our customer support";
+"field_is_required" = "This field is required";
+"data_saved_successfully" = "Your data has been saved successfully";
+"confirmed" = "Confirmed";

@@ -125,7 +125,7 @@ func RemoveFromCart(data: RemoveCartData, completion: @escaping (CheckoutRespons
 func FetchCartData(data: FetchCardDataRequest, completion: @escaping (CheckoutResponse?) -> Void) {
 //    let url = NetworkManager.shared.constructURL(endpoint: "test/error")
     let url = NetworkManager.shared.constructURL(endpoint: "cart/checkout")
-    let body: [String: Any] = [
+    var body: [String: Any] = [
         "token": getAccountToken(),
         "device_id": getDeviceId(),
         "use_bonus_amount": data.useBonusAmount ?? 0,
@@ -135,7 +135,24 @@ func FetchCartData(data: FetchCardDataRequest, completion: @escaping (CheckoutRe
         "coupon": data.coupon ?? "",
         "from_app": "ios"
     ]
-    
+
+    // The shipping total is priced from the destination, so `cart/checkout` gets the
+    // same address payload as `order/add` — this mirrors Android, which posts its whole
+    // AddOrderRequest here. Without the coordinates the delivery fee comes back wrong.
+    if let address = data.address {
+        body["billing_address"]   = address.address
+        body["billing_building"]  = address.building
+        body["billing_apartment"] = address.apartment
+        body["billing_entrance"]  = address.entrance
+        body["billing_floor"]     = address.floor
+        body["billing_domofon"]   = address.domofon
+        body["billing_city"]      = address.city
+        body["billing_state"]     = address.state
+        body["billing_district"]  = address.district
+        body["billing_latitude"]  = address.latitude
+        body["billing_longitude"] = address.longitude
+    }
+
     NetworkManager.shared.performRequest(url: url, body: body){ (result: CheckoutResponse?) in
         completion(result)
     }

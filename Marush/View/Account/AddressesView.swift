@@ -148,6 +148,17 @@ struct AddressFormView: View {
     @State private var wrongAddress        = false
     @State private var wrongAddressMessage = ""
 
+    // Yandex lookup — the API only accepts addresses it can geocode.
+    @State private var latitude   = ""
+    @State private var longitude  = ""
+    @State private var city       = ""
+    @State private var state      = ""
+    @State private var district   = ""
+    @State private var suggestions: [SearchAddress] = []
+    @State private var suggestWork: DispatchWorkItem?
+    /// Set while we fill the field from a tapped suggestion, so that does not re-query.
+    @State private var isApplyingSuggestion = false
+
     @FocusState private var focused: FocusFields?
 
     private var isEditing: Bool { !selectedAddress.id.isEmpty }
@@ -176,6 +187,17 @@ struct AddressFormView: View {
                     .focused($focused, equals: .address)
                     .submitLabel(.next)
                     .onSubmit { focused = .building }
+                    .onChange(of: address) { _ in scheduleSuggest() }
+                    // Floating dropdown: the alignment guide pins the list's top edge to
+                    // the field's bottom, so it hovers instead of pushing the form down.
+                    .overlay(alignment: .bottomLeading) {
+                        if !suggestions.isEmpty {
+                            suggestionsDropdown
+                                .alignmentGuide(VerticalAlignment.bottom) { $0[.top] }
+                                .offset(y: 4)
+                        }
+                    }
+                    .zIndex(1)
 
                     // Շենք / Տուն  |  Բնակարան
                     HStack(spacing: 12) {
@@ -308,6 +330,47 @@ struct AddressFormView: View {
         .onTapGesture { hideKeyboard() }
     }
 
+    // MARK: - Suggestions dropdown
+
+    private var suggestionsDropdown: some View {
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(spacing: 0) {
+                ForEach(suggestions) { suggestion in
+                    Button { apply(suggestion) } label: {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(suggestion.title)
+                                .font(.LatoBold(size: 14))
+                                .foregroundColor(Color(UIColor(named: "ColorDark")!))
+                                .multilineTextAlignment(.leading)
+                            Text(suggestion.address)
+                                .font(.Lato(size: 13))
+                                .foregroundColor(.gray)
+                                .multilineTextAlignment(.leading)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+
+                    if suggestion.id != suggestions.last?.id {
+                        Divider().padding(.leading, 16)
+                    }
+                }
+            }
+        }
+        // Caps the list so a long result set cannot cover the whole form.
+        .frame(maxHeight: 240)
+        .background(Color.white)
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color(UIColor(named: "CustomGray")!), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.12), radius: 10, y: 4)
+    }
+
     // MARK: - Load existing address values
 
     private func loadValues() {
@@ -320,6 +383,81 @@ struct AddressFormView: View {
         isDefault          = selectedAddress.isDefault
         doorCode           = selectedAddress.domofon
         driverInstructions = selectedAddress.comment
+        latitude           = selectedAddress.latitude
+        longitude          = selectedAddress.longitude
+        city               = selectedAddress.city
+        state              = selectedAddress.state
+        district           = selectedAddress.district
+    }
+
+    // MARK: - Yandex lookup
+
+    /// Debounces typing into one `yandex/autosuggest` call.
+    private func scheduleSuggest() {
+        guard !isApplyingSuggestion else { return }
+
+        // Typing again invalidates a previously resolved pin.
+        latitude = ""; longitude = ""; city = ""; state = ""; district = ""
+
+        suggestWork?.cancel()
+        let query = address.trimmingCharacters(in: .whitespaces)
+        guard query.count >= 3 else {
+            suggestions = []
+            return
+        }
+
+        let work = DispatchWorkItem {
+            SearchAddressSuggestions(search: query) { result in
+                DispatchQueue.main.async {
+                    guard let result, result.status != 500 else {
+                        suggestions = []
+                        return
+                    }
+                    suggestions = result.address
+                }
+            }
+        }
+        suggestWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4, execute: work)
+    }
+
+    /// Resolves the tapped suggestion into coordinates via `yandex/geocode`.
+    private func apply(_ suggestion: SearchAddress) {
+        suggestWork?.cancel()
+        isApplyingSuggestion = true
+        address = suggestion.address
+        suggestions = []
+        hideKeyboard()
+
+        GeocodeAddressLookup(search: suggestion.address) { result in
+            DispatchQueue.main.async {
+                isApplyingSuggestion = false
+
+                guard let geo = result?.address, result?.status != 500,
+                      !geo.latitude.isEmpty, !geo.longitude.isEmpty,
+                      !geo.city.isEmpty, !geo.state.isEmpty else {
+                    wrongAddress = true
+                    wrongAddressMessage = getLocalString(string: "sorry_we_dont_deliver_to")
+                        + " " + suggestion.address
+                    return
+                }
+
+                wrongAddress = false
+                latitude  = geo.latitude
+                longitude = geo.longitude
+                city      = geo.city
+                state     = geo.state
+                district  = geo.district
+
+                // Yandex often knows the house number already.
+                if !geo.building.isEmpty {
+                    building = geo.building
+                    focused = .apartment
+                } else {
+                    focused = .building
+                }
+            }
+        }
     }
 
     // MARK: - Save
@@ -331,11 +469,18 @@ struct AddressFormView: View {
             btnLoading = false
             return
         }
+        // No coordinates means the address was typed, not picked — the API would reject it.
+        guard !latitude.isEmpty, !longitude.isEmpty, latitude != "0", longitude != "0" else {
+            wrongAddress = true
+            wrongAddressMessage = getLocalString(string: "choose_address_from_the_suggested_list")
+            btnLoading = false
+            return
+        }
         wrongAddress = false
         btnLoading = true
 
         AddAddress(
-            data: Address(id: id, title: "", city: "", address: address, building: building, apartment: apartment, entrance: entrance, floor: floor, domofon: doorCode, isDefault: isDefault, comment: driverInstructions)
+            data: Address(id: id, title: "", city: city, address: address, building: building, apartment: apartment, entrance: entrance, floor: floor, domofon: doorCode, isDefault: isDefault, comment: driverInstructions, latitude: latitude, longitude: longitude, state: state, district: district)
         ) { response in
             btnLoading = false
             if response?.status == 200 {
@@ -516,6 +661,8 @@ struct AddressItem: View {
 struct AddressPickerSheet: View {
     @EnvironmentObject var appData: AppDataViewModel
     @Binding var isPresented: Bool
+    /// Called with the chosen address once it has been made default on the server.
+    var onSelect: ((Address) -> Void)? = nil
 
     @StateObject private var addressVM = AddressesViewModel()
     @State private var showAddForm      = false
@@ -635,6 +782,7 @@ struct AddressPickerSheet: View {
                         copy.isDefault = (a.id == address.id) ? 1 : 0
                         return copy
                     }
+                    onSelect?(address)
                     isPresented = false
                 }
             }

@@ -102,6 +102,12 @@ class UserSettings: ObservableObject{
     @Published var showCartDialog = false
     @Published var dialogProducId: String = ""
     @Published var orderId: Int = 0
+
+    // Order confirmation screen, shown once payment is verified.
+    @Published var showThankYou: Bool = false
+    @Published var thankYouEstimate: String = ""
+    @Published var thankYouIsDelivery: Bool = true
+    @Published var thankYouMessage: String = ""
     
 //    Added
     @Published var show_version:Bool = false

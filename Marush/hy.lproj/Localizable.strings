@@ -158,7 +158,7 @@
 "select_time" = "Ընտրել ժամանակ";
 "get_directions" = "Ինչպես հասնել";
 "favorites" = "Նախընտրածներ";
-"payment_method" = "Վճարման եղանակ";
+"payment_method" = "Վճարման մեթոդ";
 "payment_methods" = "Վճարման եղանակներ";
 "release_notes" = "Թարմացրեք հավելվածը ավելի լավ փորձի համար";
 "update" = "Թարմացնել";
@@ -247,7 +247,7 @@
 "pickup_location" = "Ստացման կետ";
 "select_shop" = "Ընտրել խանութ";
 "asap" = "Հնարավորինս շուտ";
-"payment_method" = "Վճարման եղանակ";
+"payment_method" = "Վճարման մեթոդ";
 "use_bonus" = "Օգտագործել բոնուս";
 "available_bonus" = "Հասանելի բոնուս";
 "coupon" = "Կուպոն";
@@ -271,7 +271,7 @@
 "my_info" = "Իմ ինֆորմացիան";
 "delivery_conditions" = "Առաքման պայմաններ";
 "free" = "Անվճար";
-"schedule_later" = "Պլանավորել հետոյ համար";
+"schedule_later" = "Պլանավորել հետոի համար";
 "select_time_label" = "Ընտրեք ժամը";
 "change" = "Փոխիր";
 "confirm" = "Հաստատել";
@@ -289,5 +289,22 @@
 "instructions_for_driver" = "Հրահանգներ վարորդին";
 "recipient_name" = "Ստացողի անունը";
 "recipient_phone" = "Ստացողի հեռախոսահամարը";
-"items_in_order" = "Պատվերի ապրանքները";
-"edit" = "Խմբագրել";
+"items_in_order" = "Ապրանքների արժեք";
+"edit" = "Փոփոխել";
+"asap_estimate" = "50–60 րոպե";
+"choose_a_pick_up_location" = "Ընտրեք որտեղից եք ցանկանում վերցնել պատվերը";
+"choose_address_from_the_suggested_list" = "Ընտրեք հասցեն առաջարկված ցանկից";
+"sorry_we_dont_deliver_to" = "Ներողություն, մենք չենք առաքում դեպի՝";
+"our_working_hours" = "Մեր աշխատանքային ժամերն են 11:00 - 23:50";
+
+/* Order confirmed */
+"order_confirmed" = "Պատվերը հաստատված է!";
+"order_placed_successfully" = "Ձեր պատվերը հաջողությամբ ընդունվել է";
+"will_be_delivered_by" = "Կառաքվի %@";
+"will_be_ready_by" = "Պատրաստ կլինի %@";
+"track_my_order" = "Հետևել պատվերին";
+"payment_not_processed" = "Վճարումը չկատարվեց";
+"support_note" = "Հարցերի դեպքում խնդրում ենք ուղղակիորեն կապվել մեր աջակցման ծառայության հետ";
+"field_is_required" = "Դաշտը պարտադիր է";
+"data_saved_successfully" = "Տվյալները հաջողությամբ պահպանվեցին";
+"confirmed" = "Հաստատվեց";

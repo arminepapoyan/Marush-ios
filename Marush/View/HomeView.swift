@@ -132,11 +132,11 @@ struct HomeView: View {
                                         ("Professional service", "ic-benefit-3")
                                     ]
                                 )
-                                SeasonalBanner(
-                                    title: "Christmas is coming 🎄🎄",
-                                    buttonTitle: getLocalString(string: "view_all")
-                                )
-                                .padding(.top, -20)
+//                                SeasonalBanner(
+//                                    title: "Christmas is coming 🎄🎄",
+//                                    buttonTitle: getLocalString(string: "view_all")
+//                                )
+//                                .padding(.top, -20)
 
                                 if !appData.productsBestseller.isEmpty {
                                     ProductsGrid(isLoading: $isLoading, title: getLocalString(string: "bestseller"), products: appData.productsBestseller)
@@ -150,11 +150,11 @@ struct HomeView: View {
                                         .padding(.horizontal, horizontalPadding)
                                 }
 
-                                SubscriptionHero(
-                                    titleTop: "Subscribe for your",
-                                    planTitle: "Monthly",
-                                    titleBottom: "sweet box!"
-                                )
+//                                SubscriptionHero(
+//                                    titleTop: "Subscribe for your",
+//                                    planTitle: "Monthly",
+//                                    titleBottom: "sweet box!"
+//                                )
 
                                 if !appData.productsNews.isEmpty {
                                     ProductsGrid(isLoading: $isLoading, title: getLocalString(string: "new_in"), products: appData.productsNews)

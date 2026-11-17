@@ -51,11 +51,11 @@ func updateUserData(data: UpdateUser, completion: @escaping (Message?) -> Void) 
     let body: [String: Any] = [
         "token": getAccountToken(),
         "device_id": getDeviceId(),
-        "name": data.name,
-        "lastname": data.lastname,
-        "email": data.email,
-        "date_of_birth": data.date_of_birth,
-        "gender": data.gender,
+        "name": data.name ?? "",
+        "lastname": data.lastname ?? "",
+        "phone": data.phone ?? "",
+        "email": data.email ?? "",
+        "date_of_birth": data.date_of_birth ?? "",
         "from_app": "ios"
     ]
     

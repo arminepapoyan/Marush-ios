@@ -36,58 +36,64 @@ class NetworkManager {
             print("Request URL: \(url)")
             print("Request Body: \(String(data: jsonData, encoding: .utf8) ?? "")")
             
+            // Every exit path must land on the main queue: SwiftUI state written from a
+            // background thread does not reliably refresh the UI, which made failures
+            // look like "nothing happened".
+            func finish(_ value: T?) {
+                DispatchQueue.main.async { completion(value) }
+            }
+
             URLSession.shared.dataTask(with: request) { (data, response, error) in
+                let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+
                 if let error = error {
-                    print("Error: \(error.localizedDescription) \(url)")
-                    completion(nil)
+                    print("❌ Network error \(url): \(error.localizedDescription)")
+                    finish(nil)
                     return
                 }
 
                 guard let apiData = data else {
-                    print("No data found \(url)")
-                    completion(nil)
+                    print("❌ No data \(url) [HTTP \(status)]")
+                    finish(nil)
                     return
                 }
 
+                let raw = String(data: apiData, encoding: .utf8) ?? ""
+
                 do {
-                    if let responseString = String(data: apiData, encoding: .utf8) {
-                        print("Response Data Success \(url) ")
-//                        print("Response Data Success \(url) \(responseString)")
-                    }
-                    
-                    // Use the generic type T for decoding
                     let result = try JSONDecoder().decode(T.self, from: apiData)
-                    DispatchQueue.main.async {
-                        completion(result) // Return the decoded object of type T
-                    }
+                    print("✅ \(url) [HTTP \(status)]")
+                    finish(result)
                 } catch let DecodingError.keyNotFound(key, context) {
-                    print("Missing key '\(key.stringValue)' in \(url)")
-                    print("Debug Description: \(context.debugDescription)")
-                    print("CodingPath: \(context.codingPath)")
-                    completion(nil)
+                    print("❌ Missing key '\(key.stringValue)' in \(url)")
+                    print("   CodingPath: \(context.codingPath)")
+                    print("   Response: \(raw)")
+                    finish(nil)
                 } catch let DecodingError.typeMismatch(type, context) {
-                    print("Type mismatch for type '\(type)' in \(url)")
-                    print("Debug Description: \(context.debugDescription)")
-                    print("CodingPath: \(context.codingPath)")
-                    completion(nil)
+                    print("❌ Type mismatch for '\(type)' in \(url)")
+                    print("   \(context.debugDescription)")
+                    print("   CodingPath: \(context.codingPath)")
+                    print("   Response: \(raw)")
+                    finish(nil)
                 } catch let DecodingError.valueNotFound(value, context) {
-                    print("Value '\(value)' not found in \(url)")
-                    print("Debug Description: \(context.debugDescription)")
-                    print("CodingPath: \(context.codingPath)")
-                    completion(nil)
+                    print("❌ Value '\(value)' not found in \(url)")
+                    print("   CodingPath: \(context.codingPath)")
+                    print("   Response: \(raw)")
+                    finish(nil)
                 } catch let DecodingError.dataCorrupted(context) {
-                    print("Data corrupted in \(url)")
-                    print("Debug Description: \(context.debugDescription)")
-                    completion(nil)
+                    print("❌ Data corrupted in \(url): \(context.debugDescription)")
+                    print("   Response: \(raw)")
+                    finish(nil)
                 } catch {
-                    print("Decoding error \(url): \(error.localizedDescription)")
-                    completion(nil)
+                    print("❌ Decoding error \(url): \(error.localizedDescription)")
+                    print("   Response: \(raw)")
+                    finish(nil)
                 }
             }.resume()
             
         } catch {
-            print("JSON serialization error \(url): \(error.localizedDescription)")
-            completion(nil)
+            print("❌ JSON serialization error \(url): \(error.localizedDescription)")
+            DispatchQueue.main.async { completion(nil) }
         }
     }
 }

@@ -33,6 +33,23 @@
         <string>Lato-Regular.ttf</string>
         <string>Lato-Bold.ttf</string>
     </array>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>CFBundleURLName</key>
+            <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>marush</string>
+            </array>
+        </dict>
+    </array>
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>idramapp</string>
+    </array>
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
     <key>UIDesignRequiresCompatibility</key>

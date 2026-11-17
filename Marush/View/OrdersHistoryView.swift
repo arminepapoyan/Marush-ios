@@ -298,12 +298,12 @@ struct OrderCard: View {
                         Spacer()
                         Text("\(order.statusName)")
                             .font(.Lato(size: 13))
-                            .foregroundColor(Color(UIColor(named: "ColorDark")!))
+                            .foregroundColor(statusColor)
                     }
-                    HStack(alignment: .top) {
-//                        Text(order.isDelivery ? (order.billingAddress ?? "") : (order.shop?.name ?? ""))
-//                            .font(.Lato(size: 13))
-//                            .foregroundColor(Color(UIColor(named: "ColorDark")!))
+                    HStack(alignment: .lastTextBaseline) {
+                        Text(order.insertDate ?? "")
+                            .font(.Lato(size: 13))
+                            .foregroundColor(Color(UIColor(named: "ColorDark")!))
                         Spacer()
                         HStack(alignment: .lastTextBaseline, spacing: 4) {
                             Text("\(Int(order.total))")
@@ -322,30 +322,29 @@ struct OrderCard: View {
             if !order.products.isEmpty {
                 Divider().padding(.horizontal, 12)
 
-                HStack(spacing: 8) {
-                    productImagesRow
+                HStack(spacing: 10) {
+                    // Slot time — shown for every status, not just active orders.
+                    if !slotText.isEmpty {
+                        Image(systemName: "timer")
+                            .font(.system(size: 15))
+                            .foregroundColor(Color(UIColor(named: "ColorDark")!).opacity(0.5))
+                            .frame(width: 34, height: 34)
+                            .background(Color.white)
+                            .cornerRadius(8)
+
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(getLocalString(string: order.isDelivery ? "delivery_time" : "pick_up_time"))
+                                .font(.Lato(size: 12))
+                                .foregroundColor(Color(UIColor(named: "ColorDark")!).opacity(0.4))
+                            Text(slotText)
+                                .font(.LatoBold(size: 13))
+                                .foregroundColor(Color(UIColor(named: "ColorDark")!))
+                        }
+                    }
 
                     Spacer()
 
-                    // Delivery time — active orders only
-                    if isActive,
-                       let date = order.deliveryDate,
-                       let time = order.deliveryTime,
-                       !date.isEmpty || !time.isEmpty {
-                        HStack(spacing: 4) {
-                            Image(systemName: "clock")
-                                .font(.system(size: 11))
-                                .foregroundColor(.gray)
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text(getLocalString(string: order.isDelivery ? "delivery_time" : "pick_up_time"))
-                                    .font(.Lato(size: 11))
-                                    .foregroundColor(Color(UIColor(named: "ColorDark")!).opacity(0.4))
-                                Text("\(date) \(time)".trimmingCharacters(in: .whitespaces))
-                                    .font(.LatoBold(size: 12))
-                                    .foregroundColor(Color(UIColor(named: "ColorDark")!))
-                            }
-                        }
-                    }
+                    productImagesRow
                 }
                 .padding(12)
                 .background(Color(UIColor(named: "F9F9F9")!))
@@ -361,6 +360,21 @@ struct OrderCard: View {
 
     private var isActive: Bool {
         !(order.isFinished ?? false) && !(order.isCancelled ?? false)
+    }
+
+    /// Cancelled orders read in red, as on Android.
+    private var statusColor: Color {
+        (order.isCancelled ?? false)
+            ? Color(UIColor(named: "CustomRed")!)
+            : Color(UIColor(named: "ColorDark")!)
+    }
+
+    /// "ASAP" for immediate orders, otherwise the booked date and time.
+    private var slotText: String {
+        if order.isAsap == true { return "ASAP" }
+        let date = order.deliveryDate ?? ""
+        let time = order.deliveryTime ?? ""
+        return "\(date) \(time)".trimmingCharacters(in: .whitespaces)
     }
 
     private var productImagesRow: some View {

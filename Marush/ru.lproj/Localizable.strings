@@ -293,3 +293,20 @@
 "recipient_phone" = "Номер телефона получателя";
 "items_in_order" = "Товары в заказе";
 "edit" = "Изменить";
+"asap_estimate" = "50–60 мин";
+"choose_a_pick_up_location" = "Выберите, откуда хотите забрать заказ";
+"choose_address_from_the_suggested_list" = "Выберите адрес из предложенного списка";
+"sorry_we_dont_deliver_to" = "Извините, мы не доставляем в:";
+"our_working_hours" = "Наши рабочие часы 11:00 - 23:50";
+
+/* Order confirmed */
+"order_confirmed" = "Заказ подтверждён!";
+"order_placed_successfully" = "Ваш заказ успешно оформлен";
+"will_be_delivered_by" = "Будет доставлен %@";
+"will_be_ready_by" = "Будет готов %@";
+"track_my_order" = "Отследить заказ";
+"payment_not_processed" = "Платёж не прошёл";
+"support_note" = "Если у вас есть вопросы, пожалуйста, свяжитесь напрямую с нашей службой поддержки";
+"field_is_required" = "Поле обязательно для заполнения";
+"data_saved_successfully" = "Данные успешно сохранены";
+"confirmed" = "Подтверждено";

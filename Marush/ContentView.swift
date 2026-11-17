@@ -18,17 +18,16 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-//                if showSplash {
-//                    SplashScreenView(
-//                        namespace: logoNamespace,
-//                        onFinish: {
-//                            withAnimation(.easeInOut(duration: 0.8)) {
-//                                showSplash = false
-//                            }
-//                        }
-//                    )
-//                } else {
-                    //                if settings.isLogined && appData.status != 501 {
+                if showSplash {
+                    SplashScreenView(
+                        namespace: logoNamespace,
+                        onFinish: {
+                            withAnimation(.easeInOut(duration: 0.8)) {
+                                showSplash = false
+                            }
+                        }
+                    )
+                } else {
                     if settings.isLogined {
                         MainView()
                             .environmentObject(settings)
@@ -36,14 +35,14 @@ struct ContentView: View {
                     } else {
                         AuthorizationView(namespace: logoNamespace)
                     }
-//                }
+                }
             }
             .onAppear {
-                //            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                //                withAnimation {
-                //                    self.showSplash = false
-                //                }
-                //            }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                    withAnimation {
+                        self.showSplash = false
+                    }
+                }
             }
         }
     }

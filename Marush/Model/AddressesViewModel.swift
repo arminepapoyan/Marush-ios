@@ -95,10 +95,73 @@ func AddAddress(data: Address, completion: @escaping (Message?) -> Void) {
         "city": data.city,
         "domofon": data.domofon,
         "comment": data.comment,
-        
+        // Resolved by `yandex/geocode` — the API refuses delivery without coordinates.
+        "latitude": data.latitude,
+        "longitude": data.longitude,
+        "state": data.state,
+        "district": data.district,
     ]
-    
+
     NetworkManager.shared.performRequest(url: url, body: body){ (result: Message?) in
+        completion(result)
+    }
+}
+
+// MARK: - Yandex address lookup
+
+struct SearchAddress: Codable, Identifiable, Hashable {
+    var id: String { address }
+    let title: String
+    let address: String
+}
+
+struct SearchAddressResult: Codable {
+    let status: Int
+    let address: [SearchAddress]
+}
+
+struct GeocodeAddress: Codable {
+    let latitude: String
+    let longitude: String
+    let address: String
+    let state: String
+    let city: String
+    let street: String
+    let district: String
+    let building: String
+}
+
+struct GeocodeResult: Codable {
+    let status: Int
+    let address: GeocodeAddress
+}
+
+/// Street suggestions while the user types.
+func SearchAddressSuggestions(search: String, completion: @escaping (SearchAddressResult?) -> Void) {
+    let url = NetworkManager.shared.constructURL(endpoint: "yandex/autosuggest")
+    let body: [String: Any] = [
+        "token": getAccountToken(),
+        "device_id": getDeviceId(),
+        "from_app": "ios",
+        "search": search
+    ]
+
+    NetworkManager.shared.performRequest(url: url, body: body) { (result: SearchAddressResult?) in
+        completion(result)
+    }
+}
+
+/// Resolves a chosen suggestion into coordinates and administrative parts.
+func GeocodeAddressLookup(search: String, completion: @escaping (GeocodeResult?) -> Void) {
+    let url = NetworkManager.shared.constructURL(endpoint: "yandex/geocode")
+    let body: [String: Any] = [
+        "token": getAccountToken(),
+        "device_id": getDeviceId(),
+        "from_app": "ios",
+        "search": search
+    ]
+
+    NetworkManager.shared.performRequest(url: url, body: body) { (result: GeocodeResult?) in
         completion(result)
     }
 }

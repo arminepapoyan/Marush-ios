@@ -46,12 +46,14 @@ struct User:Codable {
     }
 }
 
+/// Mirrors Android's `UpdateAccountRequest` — `user/edit` expects `phone`, and
+/// rejects the request outright when `gender` is sent as null.
 struct UpdateUser:Codable {
     var name: String?
     var lastname: String?
+    var phone: String?
     var email: String?
     var date_of_birth: String?
-    var gender: String?
 //    var old_password:String?
 //    var password:String?
 //    var repeat_password:String?

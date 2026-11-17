@@ -20,6 +20,8 @@ struct ButtonView: View {
     var backgroundColorOverride: Color?
     var showArrow: Bool
     var isFullWidth: Bool
+    /// SF Symbol shown in place of the chevron — used for transient states like "saved".
+    var trailingSystemIcon: String?
 
     
     /// Full control initializer
@@ -33,6 +35,7 @@ struct ButtonView: View {
         backgroundColorOverride: Color? = nil,
         showArrow: Bool = true,
         isFullWidth: Bool = true,
+        trailingSystemIcon: String? = nil,
         action: @escaping () -> Void
     ) {
         self._showLoading = showLoading
@@ -44,6 +47,7 @@ struct ButtonView: View {
         self.backgroundColorOverride = backgroundColorOverride
         self.showArrow = showArrow
         self.isFullWidth = isFullWidth
+        self.trailingSystemIcon = trailingSystemIcon
         self.action = action
     }
     /// Default initializer (showLoading & isDisabled = false)
@@ -55,6 +59,7 @@ struct ButtonView: View {
         backgroundColorOverride: Color? = nil,
         showArrow: Bool = true,
         isFullWidth: Bool = true,
+        trailingSystemIcon: String? = nil,
         action: @escaping () -> Void
     ) {
         self._showLoading = .constant(false)
@@ -66,6 +71,7 @@ struct ButtonView: View {
         self.backgroundColorOverride = backgroundColorOverride
         self.showArrow = showArrow
         self.isFullWidth = isFullWidth
+        self.trailingSystemIcon = trailingSystemIcon
         self.action = action
     }
     
@@ -94,7 +100,11 @@ struct ButtonView: View {
                         Text(title)
                             .font(.PoppinsMedium(size: 16))
                             .foregroundColor(textColor)
-                        if showArrow {
+                        if let icon = trailingSystemIcon {
+                            Image(systemName: icon)
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(textColor)
+                        } else if showArrow {
                             Image(
                                 isDisabled
                                 ? "ic-chevron-right-gray"

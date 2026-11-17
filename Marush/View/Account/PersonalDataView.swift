@@ -42,6 +42,7 @@ struct PersonalDataView: View {
     @State var wrongPassword: Bool = false
     @State var wrongRepeatPassword: Bool = false
     
+    @State var wrongemailMessage: String = ""
     @State var wrongnameMessage: String = ""
     @State var wronglastnameMessage: String = ""
     @State var wrongOldPasswordMessage: String = ""
@@ -63,6 +64,9 @@ struct PersonalDataView: View {
     @State private var successTitle: String = ""
     @State private var successMessage: String = ""
     @State private var actionDialogType: String = "success"
+    /// Briefly turns the save button into a confirmation after a successful update.
+    @State private var saveSucceeded = false
+    private let successGreen = Color(red: 10/255, green: 126/255, blue: 86/255)
     @State var errorMess = ""
     
     @FocusState private var focusedField: FocusFields?
@@ -139,7 +143,6 @@ struct PersonalDataView: View {
                 }
             inputLabel(label: getLocalString(string: "birthday"))
             birthdayInput(birthdate: $birthday, wrongBirthdate: $wrongBirthdate)
-                .background(Color.white) // optional for hit testing
                 .contentShape(Rectangle()) // makes the full area tappable
                 .onTapGesture {
                     dateEdit = true
@@ -198,7 +201,7 @@ struct PersonalDataView: View {
             isError: wrongemail,
             isSecure: false,
             showError: false,
-            errorMessage: .constant(""),
+            errorMessage: $wrongemailMessage,
             showLabel: true
         )
     }
@@ -230,7 +233,16 @@ struct PersonalDataView: View {
     
     // Next Button
     private var saveDataButton: some View {
-        ButtonView(showLoading: $saveDataLoading,  isDisabled: .constant(false), title: getLocalString(string: "save")) {
+        ButtonView(
+            showLoading: $saveDataLoading,
+            isDisabled: .constant(false),
+            title: saveSucceeded
+                ? getLocalString(string: "confirmed")
+                : getLocalString(string: "save"),
+            backgroundColorOverride: saveSucceeded ? successGreen : nil,
+            // Checkmark takes the chevron's place while confirming.
+            trailingSystemIcon: saveSucceeded ? "checkmark" : nil
+        ) {
             handleUserEdit()
         }
     }
@@ -275,7 +287,9 @@ struct PersonalDataView: View {
                        let year = components.year ?? 0
                        let month = components.month ?? 0
                        let day = components.day ?? 0
-                       birthday = String(format: "%02d/%02d/%d", day, month, year)
+                       // `yyyy-MM-dd` is what the API accepts; `dd/MM/yyyy` was
+                       // silently dropped server-side while still returning 200.
+                       birthday = String(format: "%04d-%02d-%02d", year, month, day)
                        dateEdit = false
                    }
                    .font(.system(size: 16))
@@ -292,22 +306,33 @@ struct PersonalDataView: View {
     private func handleUserEdit() {
         saveDataLoading = true
         var error = 0
+
+        // Clear anything left from the previous attempt.
+        wrongnameMessage = ""
+        wronglastnameMessage = ""
+        wrongemailMessage = ""
+
+        let required = getLocalString(string: "field_is_required")
+
         if name.isEmpty {
             wrongname = true
+            wrongnameMessage = required
             error = 1
         } else {
             wrongname = false
         }
-        
+
         if lastname.isEmpty {
             wronglastname = true
+            wronglastnameMessage = required
             error = 1
         } else {
             wronglastname = false
         }
-        
+
         if email.isEmpty {
             wrongemail = true
+            wrongemailMessage = required
             error = 1
         } else {
             wrongemail = false
@@ -318,32 +343,67 @@ struct PersonalDataView: View {
             return // Early exit if there are validation errors
         }
         
-        updateUserData(data: UpdateUser(name: name, lastname: lastname, email: email, date_of_birth: birthday)){
+        print("👤 user/edit → name: \(name), lastname: \(lastname), email: \(email), date_of_birth: \(birthday)")
+
+        updateUserData(data: UpdateUser(name: name, lastname: lastname, phone: phone, email: email, date_of_birth: birthday)){
             response in
             saveDataLoading = false
-            if(response?.status == 200){
+
+            print("👤 user/edit ← status: \(response?.status.description ?? "nil")"
+                  + ", title: \(response?.title ?? "-")"
+                  + ", message: \(response?.message ?? "-")"
+                  + ", errors: email=\(response?.errors?.email ?? "-")"
+                  + " name=\(response?.errors?.name ?? "-")"
+                  + " lastname=\(response?.errors?.lastname ?? "-")"
+                  + " date_of_birth=\(response?.errors?.date_of_birth ?? "-")")
+
+            // No response at all (network or decode failure) — say so instead of
+            // silently dropping back to the idle button.
+            guard let response else {
+                showAlert = true
+                errorMess = getLocalString(string: "something_went_wrong_try_again")
+                return
+            }
+
+            if(response.status == 200){
                 saveDataLoading = false
-                successTitle = response?.title ?? ""
-                successMessage = response?.message ?? ""
-                showActionDialog.toggle()
+                // Confirmation reads on the button itself, then fades back to "Save".
+                withAnimation(.easeInOut(duration: 0.25)) { saveSucceeded = true }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                    withAnimation(.easeInOut(duration: 0.25)) { saveSucceeded = false }
+                }
                 
                 updateUserEnviroment()
             } else {
-                if response?.errors?.email != nil {
+                // Show the server's own wording under the field it belongs to.
+                var handled = false
+
+                if let message = response.errors?.email {
                     wrongemail = true
+                    wrongemailMessage = message
+                    handled = true
                 }
-                if response?.errors?.name != nil {
+                if let message = response.errors?.name {
                     wrongname = true
+                    wrongnameMessage = message
+                    handled = true
                 }
-                if response?.errors?.lastname != nil {
+                if let message = response.errors?.lastname {
                     wronglastname = true
+                    wronglastnameMessage = message
+                    handled = true
                 }
-                if response?.errors?.date_of_birth != nil {
+                if response.errors?.date_of_birth != nil {
                     wrongBirthdate = true
+                    handled = true
                 }
-                if response?.message != nil && response?.message != ""{
+
+                // Never leave the user without feedback.
+                if !handled {
                     showAlert = true
-                    errorMess = response?.message ?? ""
+                    errorMess = (response.message?.isEmpty == false)
+                        ? (response.message ?? "")
+                        : getLocalString(string: "something_went_wrong_try_again")
                 }
             }
         }

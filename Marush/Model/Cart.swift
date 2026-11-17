@@ -183,6 +183,11 @@ struct Address: Identifiable, Codable, Hashable {
     var domofon: String
     var isDefault: Int
     var comment: String
+    // Resolved by `yandex/geocode`; the API refuses a delivery order without coordinates.
+    var latitude: String = ""
+    var longitude: String = ""
+    var state: String = ""
+    var district: String = ""
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -196,6 +201,10 @@ struct Address: Identifiable, Codable, Hashable {
         case domofon
         case comment
         case isDefault = "default"
+        case latitude
+        case longitude
+        case state
+        case district
     }
     
     static func == (lhs: Address, rhs: Address) -> Bool {
@@ -204,6 +213,46 @@ struct Address: Identifiable, Codable, Hashable {
 
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
+    }
+}
+
+extension Address {
+    /// Decoded defensively: the API omits keys depending on the endpoint (older saved
+    /// addresses have no coordinates at all), and a single missing key would otherwise
+    /// fail the whole `addresses` array — and with it `app/data` and `cart/checkout`.
+    /// Numeric values are accepted for fields the backend sometimes sends unquoted.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        func string(_ key: CodingKeys) -> String {
+            if let value = try? container.decode(String.self, forKey: key) { return value }
+            if let value = try? container.decode(Int.self, forKey: key) { return String(value) }
+            if let value = try? container.decode(Double.self, forKey: key) { return String(value) }
+            return ""
+        }
+
+        id        = string(.id)
+        title     = string(.title)
+        city      = string(.city)
+        address   = string(.address)
+        building  = string(.building)
+        apartment = string(.apartment)
+        entrance  = string(.entrance)
+        floor     = string(.floor)
+        domofon   = string(.domofon)
+        comment   = string(.comment)
+        latitude  = string(.latitude)
+        longitude = string(.longitude)
+        state     = string(.state)
+        district  = string(.district)
+
+        if let value = try? container.decode(Int.self, forKey: .isDefault) {
+            isDefault = value
+        } else if let value = try? container.decode(Bool.self, forKey: .isDefault) {
+            isDefault = value ? 1 : 0
+        } else {
+            isDefault = Int(string(.isDefault)) ?? 0
+        }
     }
 }
 
@@ -289,6 +338,9 @@ struct Order: Codable, Identifiable{
     let isCancelled: Bool?
     let waitingTime: String?
     let couponTotal: Double?
+    /// Optional on purpose — a missing key must not fail the whole order list.
+    let insertDate: String?
+    let isAsap: Bool?
     
     private enum CodingKeys: String, CodingKey {
         case id
@@ -323,6 +375,8 @@ struct Order: Codable, Identifiable{
         case isCancelled = "is_cancelled"
         case waitingTime = "waiting_time"
         case couponTotal = "coupon_total"
+        case insertDate = "insert_date"
+        case isAsap = "is_asap"
     }
   
 }
@@ -397,20 +451,23 @@ struct FetchCardDataRequest{
     var isAsap: Int?
     var shopId: String?
     var coupon: String?
-    
-    
+    /// Destination the shipping total is priced from.
+    var address: Address?
+
     init(
         useBonusAmount: Int? = 0,
         isDelivery: Int? = 0,
         isAsap: Int? = 1,
         shopId: String? = "0",
-        coupon: String? = ""
+        coupon: String? = "",
+        address: Address? = nil
     ) {
         self.useBonusAmount = useBonusAmount
         self.isDelivery = isDelivery
         self.isAsap = isAsap
         self.shopId = shopId
         self.coupon = coupon
+        self.address = address
     }
 }
 

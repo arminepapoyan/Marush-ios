@@ -19,6 +19,8 @@ struct CheckoutView: View {
     // Checkout data from API
     @State private var checkoutData: CheckoutResponse? = nil
     @State private var isLoading = true
+    /// True while `cart/checkout` is re-pricing, so the stale fee is not shown.
+    @State private var isPricing = false
 
     // Order state
     @State private var isDelivery: Int = 0          // 0 = pickup, 1 = delivery
@@ -42,8 +44,6 @@ struct CheckoutView: View {
     @State private var doorPhone: String = ""
     @State private var entrance: String = ""
     @State private var floor: String = ""
-    /// Delivering to a different recipient — clears the recipient fields for manual entry.
-    @State private var isForSomeoneElse = false
 
     // Phone input state
     @State private var countryCode: String = "+374"
@@ -63,9 +63,6 @@ struct CheckoutView: View {
     @State private var isPlacingOrder = false
     @State private var showError      = false
     @State private var errorMessage   = ""
-    @State private var showSuccess    = false
-    @State private var successTitle   = ""
-    @State private var successMsg     = ""
 
     /// Single inset used by both the header and the scrolling content, so the back
     /// arrow and every section below start on the same line.
@@ -77,22 +74,22 @@ struct CheckoutView: View {
     private var shippingTotal: Double { checkoutData?.cart.shippingTotal ?? 0 }
     private var currentTotal:  Double { checkoutData?.cart.total ?? initialTotal }
 
+    /// Android shows a dash until delivery is actually selected and priced.
     private var deliveryFeeText: String {
-        shippingTotal > 0 ? "\(Int(shippingTotal)) AMD" : "0 AMD"
+        guard isDelivery == 1 else { return "-" }
+        return shippingTotal > 0 ? "\(Int(shippingTotal)) AMD" : getLocalString(string: "free")
     }
 
-    /// "25-35min · Confirm" when an ASAP estimate is known, otherwise just "Confirm".
-    private var confirmButtonTitle: String {
-        let confirm = getLocalString(string: "confirm")
-        guard isAsap == 1, !estimatedTimeText.isEmpty else { return confirm }
-        return "\(estimatedTimeText) · \(confirm)"
-    }
-
+    /// How long an ASAP order takes. This is a fixed figure, exactly as on Android —
+    /// `min_time`/`max_time` are the shop's opening hours, not a preparation estimate.
     private var estimatedTimeText: String {
-        let mn = checkoutData?.minTime ?? ""
-        let mx = checkoutData?.maxTime ?? ""
-        guard !mn.isEmpty else { return "" }
-        return mn == mx ? "\(mn) min" : "\(mn)–\(mx) min"
+        getLocalString(string: "asap_estimate")
+    }
+
+    /// Opening hours — fixed copy, like Android. The backend's `min_time`/`max_time`
+    /// are not used for this line.
+    private var workingHoursText: String {
+        getLocalString(string: "our_working_hours")
     }
 
     private var selectedPaymentMethod: PaymentMethod? {
@@ -156,14 +153,12 @@ struct CheckoutView: View {
             } else {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 26) {
+                        personalInfoSection
                         deliveryConditionsSection
-                        // For pickup there is no address block, so contact details live here.
-                        if isDelivery == 0 { personalInfoSection }
                         deliveryTimeSection
                         if let methods = checkoutData?.paymentMethods, !methods.isEmpty {
                             paymentSection(methods: methods)
                         }
-                        priceSummary
                     }
                     .padding(.horizontal, horizontalPadding)
                     .padding(.top, 24)
@@ -185,9 +180,8 @@ struct CheckoutView: View {
             if let address = newValue { applyAddress(address) }
         }
         .onTapGesture { hideKeyboard() }
-        .overlay(pickerOverlay)
+        .sheet(isPresented: $showTimePicker)    { timePicker         }
         .overlay(showError   ? errorDialog   : nil)
-        .overlay(showSuccess ? successDialog : nil)
         .sheet(isPresented: $showAddressPicker) { addressPickerSheet }
         .sheet(isPresented: $showShopPicker)    { shopPickerSheet    }
         .sheet(isPresented: $showPaymentPicker) { paymentPickerSheet }
@@ -275,108 +269,107 @@ struct CheckoutView: View {
         VStack(alignment: .leading, spacing: 12) {
             sectionLabel("delivery_conditions")
 
-            // Three options, scrolled horizontally as in the design.
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    conditionPill(
-                        topLabel: getLocalString(string: "pickup"),
-                        bottomValue: getLocalString(string: "free"),
-                        isSelected: isDelivery == 0
-                    ) { selectTerms(delivery: 0, someoneElse: false) }
+            HStack(spacing: 12) {
+                conditionPill(
+                    topLabel: getLocalString(string: "pickup"),
+                    bottomValue: getLocalString(string: "free"),
+                    isSelected: isDelivery == 0
+                ) { selectTerms(delivery: 0) }
 
-                    conditionPill(
-                        topLabel: getLocalString(string: "delivery"),
-                        bottomValue: deliveryFeeText,
-                        isSelected: isDelivery == 1 && !isForSomeoneElse
-                    ) { selectTerms(delivery: 1, someoneElse: false) }
-
-                    conditionPill(
-                        topLabel: getLocalString(string: "delivery_for_someone_else"),
-                        bottomValue: deliveryFeeText,
-                        isSelected: isDelivery == 1 && isForSomeoneElse
-                    ) { selectTerms(delivery: 1, someoneElse: true) }
-                }
-                .padding(.vertical, 2)
+                conditionPill(
+                    topLabel: getLocalString(string: "delivery"),
+                    bottomValue: deliveryFeeText,
+                    isSelected: isDelivery == 1,
+                    isLoading: isDelivery == 1 && isPricing
+                ) { selectTerms(delivery: 1) }
             }
+            .fixedSize(horizontal: false, vertical: true)
 
-            if isDelivery == 1 {
-                addressSelectRow
-                addressDetailFields
-            } else {
-                shopSelectRow
-            }
+            // Address (delivery) or shop (pickup) summary row.
+            deliveryInfoRow
         }
     }
 
     /// Applies a delivery-terms choice and re-prices the cart when the mode changes.
-    private func selectTerms(delivery: Int, someoneElse: Bool) {
+    private func selectTerms(delivery: Int) {
         if delivery == 1 && checkoutData?.disableDelivery == true { return }
-        guard delivery != isDelivery || someoneElse != isForSomeoneElse else { return }
-
-        let modeChanged = delivery != isDelivery
+        guard delivery != isDelivery else { return }
         isDelivery = delivery
-        isForSomeoneElse = someoneElse
-
-        // Ordering for someone else starts from blank recipient details.
-        if someoneElse {
-            billingName = ""
-            billingPhone = ""
-        } else {
-            billingName = userData.name
-            billingPhone = localPhone(userData.phone)
-        }
-
-        if modeChanged { refreshData() }
+        refreshData()
     }
 
-    // MARK: - Address / shop selectors
+    /// Bookmark · address + detail line · edit pencil — mirrors Android's `adapter_address`.
+    private var deliveryInfoRow: some View {
+        let title: String
+        let detail: String
 
-    private var addressSelectRow: some View {
-        selectRow(
-            title: selectedAddress.map(addressTitle) ?? getLocalString(string: "select_delivery_address"),
-            isPlaceholder: selectedAddress == nil
-        ) { showAddressPicker = true }
-    }
-
-    private var shopSelectRow: some View {
-        selectRow(
-            title: selectedShop?.name ?? getLocalString(string: "select_shop"),
-            isPlaceholder: selectedShop == nil
-        ) { showShopPicker = true }
-    }
-
-    private func selectRow(title: String,
-                           isPlaceholder: Bool,
-                           onTap: @escaping () -> Void) -> some View {
-        Button(action: onTap) {
-            HStack {
-                Text(title)
-                    .font(.Poppins(size: 15))
-                    .foregroundColor(isPlaceholder ? Color(UIColor(named: "8C95AA")!) : .black)
-                    .lineLimit(1)
-                Spacer()
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(dark.opacity(0.4))
+        if isDelivery == 1 {
+            if let address = selectedAddress {
+                title = [address.address, address.building]
+                    .filter { !$0.isEmpty }
+                    .joined(separator: ", ")
+                detail = addressDetailLine(address)
+            } else {
+                title = getLocalString(string: "select_delivery_address")
+                detail = ""
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 14)
-            .background(Color.white)
-            .overlay(
-                RoundedRectangle(cornerRadius: 30)
-                    .stroke(Color(UIColor(named: "CustomGray")!), lineWidth: 1)
-            )
-            .cornerRadius(30)
+        } else {
+            title = selectedShop?.name ?? getLocalString(string: "select_shop")
+            detail = selectedShop?.address ?? ""
         }
-        .buttonStyle(.plain)
+
+        return HStack(spacing: 12) {
+            Image(systemName: "bookmark")
+                .font(.system(size: 17))
+                .foregroundColor(dark)
+                .frame(width: 24)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.Lato(size: 15))
+                    .foregroundColor(dark.opacity(0.75))
+                    .fixedSize(horizontal: false, vertical: true)
+                if !detail.isEmpty {
+                    Text(detail)
+                        .font(.Lato(size: 14))
+                        .foregroundColor(Color(UIColor(named: "8C95AA")!))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Button {
+                isDelivery == 1 ? (showAddressPicker = true) : (showShopPicker = true)
+            } label: {
+                Image(systemName: "pencil")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(dark)
+                    .frame(width: 38, height: 38)
+                    .background(pillGrayBg)
+                    .cornerRadius(10)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(14)
+        .background(Color.white)
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(borderColor, lineWidth: 1)
+        )
+        .cornerRadius(14)
     }
 
-    private func addressTitle(_ a: Address) -> String {
-        let parts = [a.address, a.building].filter { !$0.isEmpty }
-        return parts.isEmpty ? a.title : parts.joined(separator: ", ")
+    /// Second, muted line of the address row: "Apartment 53, Entrance 2, Floor 9".
+    private func addressDetailLine(_ a: Address) -> String {
+        var parts: [String] = []
+        if !a.apartment.isEmpty { parts.append("\(getLocalString(string: "apartment")) \(a.apartment)") }
+        if !a.entrance.isEmpty  { parts.append("\(getLocalString(string: "entrance")) \(a.entrance)") }
+        if !a.floor.isEmpty     { parts.append("\(getLocalString(string: "floor")) \(a.floor)") }
+        return parts.joined(separator: ", ")
     }
 
-    /// Seeds the editable detail fields whenever a different address is chosen.
+    /// Keeps the order payload in sync with the chosen address, as Android's
+    /// `chooseAddress` does — these values are sent even though they are not editable here.
     private func applyAddress(_ a: Address) {
         apartment = a.apartment
         doorPhone = a.domofon
@@ -385,60 +378,34 @@ struct CheckoutView: View {
         if comment.isEmpty { comment = a.comment }
     }
 
-    // MARK: - Address detail fields
-
-    private var addressDetailFields: some View {
-        VStack(spacing: 12) {
-            HStack(spacing: 12) {
-                plainField("apartment",  $apartment)
-                plainField("door_phone", $doorPhone)
-            }
-            HStack(spacing: 12) {
-                plainField("entrance", $entrance)
-                plainField("floor",    $floor)
-            }
-            plainField("instructions_for_driver", $comment)
-            plainField("recipient_name",          $billingName)
-            plainField("recipient_phone",         $billingPhone)
-        }
-    }
-
-    private func plainField(_ key: String, _ text: Binding<String>) -> some View {
-        inputField(
-            placeholder: getLocalString(string: key),
-            text: text,
-            showErrorImg: .constant(false),
-            errorMess: .constant(""),
-            isSecure: false,
-            showLabel: false
-        )
-    }
-
-    /// Baseline width shared by the delivery-terms and delivery-time pills;
-    /// longer labels grow past it rather than wrapping.
-    private let pillMinWidth: CGFloat = 152
-
     private func conditionPill(topLabel: String,
                                 bottomValue: String,
                                 isSelected: Bool,
+                                isLoading: Bool = false,
                                 onTap: @escaping () -> Void) -> some View {
         Button(action: onTap) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(topLabel)
                     .font(.Lato(size: 13))
                     .foregroundColor(dark.opacity(0.55))
-                    .lineLimit(1)
-                Text(bottomValue)
-                    .font(.LatoBold(size: 15))
-                    .foregroundColor(dark)
-                    .lineLimit(1)
+                    .fixedSize(horizontal: false, vertical: true)
+                if isLoading {
+                    // The fee is unknown until `cart/checkout` answers — showing the old
+                    // value here would briefly read "Free".
+                    ProgressView()
+                        .scaleEffect(0.7)
+                        .frame(height: 20, alignment: .leading)
+                } else {
+                    Text(bottomValue)
+                        .font(.LatoBold(size: 15))
+                        .foregroundColor(dark)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
-            // Each pill is exactly as wide as its longest line, so no label wraps.
-            .fixedSize(horizontal: true, vertical: false)
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
-            // …but never narrower than the baseline pill width.
-            .frame(minWidth: pillMinWidth, alignment: .leading)
+            // Half the row each; `maxHeight` keeps both cards the same height when one wraps.
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             // Design marks the active choice with a filled grey card; the others stay outlined.
             .background(isSelected ? pillGrayBg : Color.white)
             .cornerRadius(14)
@@ -456,79 +423,58 @@ struct CheckoutView: View {
         VStack(alignment: .leading, spacing: 12) {
             sectionLabel(isDelivery == 1 ? "delivery_time" : "pick_up_time")
 
-            // Scrolls horizontally when the labels are too long to fit side by side.
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    // ASAP
-                    timePill(
-                        topLabel: getLocalString(string: "asap"),
-                        bottomValue: estimatedTimeText,
-                        isSelected: isAsap == 1
-                    ) { isAsap = 1 }
+            HStack(spacing: 12) {
+                // ASAP
+                timePill(
+                    topLabel: getLocalString(string: "asap"),
+                    bottomValue: estimatedTimeText,
+                    isSelected: isAsap == 1
+                ) { isAsap = 1 }
 
-                    // Schedule later
-                    timePill(
-                        topLabel: getLocalString(string: "schedule_later"),
-                        bottomValue: deliveryDate.isEmpty
-                            ? getLocalString(string: "select_time_label")
-                            : "\(deliveryDateDisplay)  \(deliveryTime)",
-                        isSelected: isAsap == 0
-                    ) { isAsap = 0 }
-                }
-                .padding(.vertical, 2)
+                // Schedule later
+                timePill(
+                    topLabel: getLocalString(string: "schedule_later"),
+                    bottomValue: deliveryDate.isEmpty
+                        ? getLocalString(string: "select_time_label")
+                        : "\(deliveryDateDisplay)  \(deliveryTime)",
+                    isSelected: isAsap == 0
+                ) { isAsap = 0 }
             }
+            // Lets the row take the height of the taller card instead of stretching.
+            .fixedSize(horizontal: false, vertical: true)
 
             // Day + Time inputs — shown only when "Schedule later" is selected
             if isAsap == 0 {
-                HStack(spacing: 12) {
+                HStack(alignment: .top, spacing: 16) {
                     pickerDisplayField(
-                        label: getLocalString(string: "day_label") + "*",
-                        value: deliveryDateDisplay
+                        label: getLocalString(string: "day_label"),
+                        value: deliveryDateDisplay,
+                        placeholder: getLocalString(string: "day_label"),
+                        isOpen: showDatePicker
                     ) {
                         pickerDate = dateFromString(deliveryDate) ?? Date()
                         showDatePicker = true
                     }
                     pickerDisplayField(
-                        label: getLocalString(string: "time_label") + "*",
-                        value: deliveryTime
+                        label: getLocalString(string: "time_label"),
+                        value: deliveryTime,
+                        placeholder: getLocalString(string: "time_label"),
+                        isOpen: showTimePicker
                     ) {
                         pickerTime = timeFromString(deliveryTime) ?? Date()
-                        withAnimation(.easeInOut(duration: 0.2)) { showTimePicker.toggle() }
+                        showTimePicker = true
                     }
                 }
-
             }
-        }
-    }
 
-    /// Floating time picker: lives in an overlay above the page, so opening it never
-    /// shifts the layout and it is not another modal stacked on this sheet.
-    @ViewBuilder
-    private var pickerOverlay: some View {
-        if showTimePicker {
-            ZStack {
-                Color.black.opacity(0.25)
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        withAnimation(.easeInOut(duration: 0.2)) { showTimePicker = false }
-                    }
-
-                DatePicker("", selection: $pickerTime, displayedComponents: .hourAndMinute)
-                    .onChange(of: pickerTime) { newValue in
-                        let fmt = DateFormatter()
-                        fmt.dateFormat = "HH:mm"
-                        deliveryTime = fmt.string(from: newValue)
-                    }
-                .datePickerStyle(.wheel)
-                .labelsHidden()
-                .frame(maxWidth: .infinity)
-                .frame(height: 190)
-                .background(Color.white)
-                .cornerRadius(20)
-                .shadow(color: .black.opacity(0.15), radius: 20, y: 8)
-                .padding(.horizontal, horizontalPadding)
+            // Opening hours, straight from `min_time` / `max_time`.
+            if !workingHoursText.isEmpty {
+                Text(workingHoursText)
+                    .font(.LatoBold(size: 15))
+                    .foregroundColor(dark.opacity(0.8))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 4)
             }
-            .transition(.opacity)
         }
     }
 
@@ -541,19 +487,18 @@ struct CheckoutView: View {
                 Text(topLabel)
                     .font(.Lato(size: 13))
                     .foregroundColor(dark.opacity(0.55))
-                    .lineLimit(1)
+                    .fixedSize(horizontal: false, vertical: true)
                 if !bottomValue.isEmpty {
                     Text(bottomValue)
                         .font(.LatoBold(size: 14))
                         .foregroundColor(dark)
-                        .lineLimit(1)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            // Sized to its longest line, same as the delivery-terms pills.
-            .fixedSize(horizontal: true, vertical: false)
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
-            .frame(minWidth: pillMinWidth, alignment: .leading)
+            // Half the row each, matched heights — same rule as the delivery-terms pills.
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             // Design marks the active choice with a filled grey card; the others stay outlined.
             .background(isSelected ? pillGrayBg : Color.white)
             .cornerRadius(14)
@@ -567,25 +512,40 @@ struct CheckoutView: View {
 
     // MARK: - Payment Method
 
+    /// Logos bundled with the app, keyed by the API's `payment_method.key`.
+    /// These win over `icon` because the backend does not ship artwork for every method.
+    private static let bundledPaymentLogos: [String: String] = [
+        "ameria":     "MyAmeria",
+        "myameria":   "MyAmeria",
+        "ameriabank": "MyAmeria"
+    ]
+
+    /// Bundled logo → API-supplied icon → generic card symbol.
+    @ViewBuilder
+    private func paymentIcon(for method: PaymentMethod) -> some View {
+        if let asset = Self.bundledPaymentLogos[method.key.lowercased()] {
+            Image(asset)
+                .resizable()
+                .scaledToFit()
+        } else if !method.icon.isEmpty, let url = URL(string: method.icon) {
+            WebImage(url: url)
+                .resizable()
+                .scaledToFit()
+        } else {
+            Image(systemName: "creditcard.fill")
+                .font(.system(size: 18))
+                .foregroundColor(dark)
+        }
+    }
+
     private func paymentSection(methods: [PaymentMethod]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             sectionLabel("payment_method")
 
             if let method = selectedPaymentMethod {
                 HStack(spacing: 14) {
-                    // Icon
-                    Group {
-                        if !method.icon.isEmpty, let url = URL(string: method.icon) {
-                            WebImage(url: url)
-                                .resizable()
-                                .scaledToFit()
-                        } else {
-                            Image(systemName: "creditcard.fill")
-                                .font(.system(size: 18))
-                                .foregroundColor(dark)
-                        }
-                    }
-                    .frame(width: 44, height: 28)
+                    paymentIcon(for: method)
+                        .frame(width: 44, height: 28)
 
                     // Show the saved card number when one is selected, else the method name.
                     Text(selectedCard.map { maskedCard($0) } ?? method.name)
@@ -622,26 +582,35 @@ struct CheckoutView: View {
                 Spacer()
                 CartAMDPrice(price: productsTotal, fontSize: 15, bold: true)
             }
-            HStack {
-                Text(getLocalString(string: "delivery_fee"))
-                    .font(.Lato(size: 15))
-                    .foregroundColor(dark.opacity(0.6))
-                Spacer()
-                CartAMDPrice(price: shippingTotal, fontSize: 15, bold: true)
+            // Android only shows the delivery line when the order is being delivered.
+            if isDelivery == 1 {
+                HStack {
+                    Text(getLocalString(string: "delivery_fee"))
+                        .font(.Lato(size: 15))
+                        .foregroundColor(dark.opacity(0.6))
+                    Spacer()
+                    if isPricing {
+                        ProgressView().scaleEffect(0.7)
+                    } else {
+                        CartAMDPrice(price: shippingTotal, fontSize: 15, bold: true)
+                    }
+                }
             }
         }
     }
 
-    // MARK: - Confirm button
+    // MARK: - Footer: totals + confirm button
 
     private var confirmButton: some View {
         VStack(spacing: 0) {
             Divider()
+            priceSummary
+                .padding(.horizontal, horizontalPadding)
+                .padding(.top, 14)
             ButtonView(
                 showLoading: $isPlacingOrder,
                 isDisabled: .constant(false),
-                // Design prefixes the estimated time, e.g. "25-35min · Confirm".
-                title: confirmButtonTitle,
+                title: getLocalString(string: "confirm"),
                 showArrow: false,
                 action: placeOrder
             )
@@ -664,23 +633,33 @@ struct CheckoutView: View {
 
     private func pickerDisplayField(label: String,
                                      value: String,
+                                     placeholder: String = "",
+                                     isOpen: Bool,
                                      onTap: @escaping () -> Void) -> some View {
         Button(action: onTap) {
             VStack(alignment: .leading, spacing: 4) {
                 inputLabel(label: label)
-                Text(value.isEmpty ? " " : value)
-                    .font(.Poppins(size: 16))
-                    .foregroundColor(value.isEmpty ? Color(UIColor(named: "8C95AA")!) : .black)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 30)
-                            .stroke(Color(UIColor(named: "CustomGray")!), lineWidth: 1)
-                    )
-                    .background(Color.white)
-                    .cornerRadius(30)
-                    .padding(2)
+                HStack(spacing: 8) {
+                    Text(value.isEmpty ? placeholder : value)
+                        .font(.Poppins(size: 16))
+                        .foregroundColor(value.isEmpty ? Color(UIColor(named: "8C95AA")!) : .black)
+                        .lineLimit(1)
+                    Spacer()
+                    // Points up while the picker is open, as in the design.
+                    Image(systemName: isOpen ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(dark.opacity(0.4))
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 30)
+                        .stroke(Color(UIColor(named: "CustomGray")!), lineWidth: 1)
+                )
+                .background(Color.white)
+                .cornerRadius(30)
+                .padding(2)
             }
         }
         .buttonStyle(.plain)
@@ -733,6 +712,54 @@ struct CheckoutView: View {
         .presentationCornerRadius(24)
     }
 
+    // MARK: - Time Picker Sheet
+
+    private var timePicker: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Button(getLocalString(string: "cancel_btn")) {
+                    showTimePicker = false
+                }
+                .font(.Lato(size: 16))
+                .foregroundColor(dark.opacity(0.5))
+                Spacer()
+                Text(getLocalString(string: "time_label"))
+                    .font(.LatoBold(size: 17))
+                    .foregroundColor(dark)
+                Spacer()
+                Button(getLocalString(string: "ok_btn")) {
+                    let fmt = DateFormatter()
+                    fmt.dateFormat = "HH:mm"
+                    deliveryTime = fmt.string(from: pickerTime)
+                    showTimePicker = false
+                }
+                .font(.LatoBold(size: 16))
+                .foregroundColor(dark)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+
+            Divider()
+
+            DatePicker(
+                "",
+                selection: $pickerTime,
+                displayedComponents: [.hourAndMinute]
+            )
+            .datePickerStyle(.wheel)
+            .labelsHidden()
+            .accentColor(dark)
+            .environment(\.locale, Locale(identifier: settings.appLang))
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
+
+            Spacer()
+        }
+        .presentationDetents([.height(320)])
+        .presentationCornerRadius(24)
+    }
+
     // MARK: - Date/Time string converters
 
     private func dateFromString(_ str: String) -> Date? {
@@ -768,134 +795,92 @@ struct CheckoutView: View {
     // MARK: - Address Picker Sheet
 
     private var addressPickerSheet: some View {
-        NavigationView {
-            Group {
-                if let addresses = checkoutData?.addresses, !addresses.isEmpty {
-                    List(addresses) { addr in
-                        Button {
-                            selectedAddress = addr
-                            showAddressPicker = false
-                        } label: {
-                            HStack(spacing: 14) {
-                                Image(systemName: "mappin.circle.fill")
-                                    .font(.system(size: 22))
-                                    .foregroundColor(Color(UIColor(named: "ColorPrimary")!))
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(addr.title.isEmpty ? addr.address : addr.title)
-                                        .font(.LatoBold(size: 15))
-                                        .foregroundColor(dark)
-                                    let detail = [addr.city, addr.address, addr.building]
-                                        .filter { !$0.isEmpty }.joined(separator: ", ")
-                                    if !detail.isEmpty {
-                                        Text(detail)
-                                            .font(.Lato(size: 13))
-                                            .foregroundColor(dark.opacity(0.55))
-                                            .lineLimit(2)
-                                    }
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                if selectedAddress?.id == addr.id {
-                                    Image(systemName: "checkmark")
-                                        .font(.system(size: 14, weight: .semibold))
-                                        .foregroundColor(dark)
-                                }
-                            }
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .listStyle(.insetGrouped)
-                } else {
-                    VStack(spacing: 12) {
-                        Spacer()
-                        Image(systemName: "mappin.slash")
-                            .font(.system(size: 44, weight: .light))
-                            .foregroundColor(dark.opacity(0.2))
-                        Text(getLocalString(string: "no_addresses"))
-                            .font(.Lato(size: 15))
-                            .foregroundColor(dark.opacity(0.5))
-                        Spacer()
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-            }
-            .navigationTitle(getLocalString(string: "select_delivery_address"))
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationBarItems(trailing: Button(getLocalString(string: "close_btn")) {
-                showAddressPicker = false
-            })
+        // Same chooser as the account screen: "Add new address" row + the saved list,
+        // and picking one makes it the default, exactly as Android does.
+        AddressPickerSheet(isPresented: $showAddressPicker) { address in
+            selectedAddress = address
+            refreshData()
         }
+        .environmentObject(appData)
     }
-
-    // MARK: - Shop Picker Sheet
 
     private var shopPickerSheet: some View {
-        NavigationView {
-            Group {
-                if let shops = checkoutData?.shops, !shops.isEmpty {
-                    List(shops) { shop in
-                        Button {
-                            guard !shop.disabled else { return }
-                            selectedShop = shop
-                            showShopPicker = false
-                        } label: {
-                            HStack(spacing: 14) {
-                                Image(systemName: "building.2.fill")
-                                    .font(.system(size: 20))
-                                    .foregroundColor(Color(UIColor(named: "ColorPrimary")!))
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(shop.name)
-                                        .font(.LatoBold(size: 15))
-                                        .foregroundColor(dark)
-                                    if !shop.address.isEmpty {
-                                        Text(shop.address)
-                                            .font(.Lato(size: 13))
-                                            .foregroundColor(dark.opacity(0.55))
-                                            .lineLimit(2)
-                                    }
-                                    if shop.disabled {
-                                        Text(shop.disabledMessage)
-                                            .font(.Lato(size: 12))
-                                            .foregroundColor(.red.opacity(0.8))
-                                    }
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .opacity(shop.disabled ? 0.4 : 1)
-                                if selectedShop?.id == shop.id {
-                                    Image(systemName: "checkmark")
-                                        .font(.system(size: 14, weight: .semibold))
-                                        .foregroundColor(dark)
-                                }
-                            }
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(shop.disabled)
-                    }
-                    .listStyle(.insetGrouped)
-                } else {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(getLocalString(string: "choose_a_pick_up_location"))
+                .font(.LatoBold(size: 18))
+                .foregroundColor(dark)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 20)
+                .padding(.top, 24)
+                .padding(.bottom, 18)
+
+            if let shops = checkoutData?.shops, !shops.isEmpty {
+                ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 12) {
-                        Spacer()
-                        Image(systemName: "building.2")
-                            .font(.system(size: 44, weight: .light))
-                            .foregroundColor(dark.opacity(0.2))
-                        Text(getLocalString(string: "no_shops"))
-                            .font(.Lato(size: 15))
-                            .foregroundColor(dark.opacity(0.5))
-                        Spacer()
+                        ForEach(shops) { shop in
+                            Button {
+                                guard !shop.disabled else { return }
+                                selectedShop = shop
+                                showShopPicker = false
+                                refreshData()
+                            } label: {
+                                shopRow(shop)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(shop.disabled)
+                            .opacity(shop.disabled ? 0.45 : 1)
+                        }
                     }
-                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 24)
                 }
+            } else {
+                Spacer()
+                Text(getLocalString(string: "no_shops"))
+                    .font(.Lato(size: 15))
+                    .foregroundColor(dark.opacity(0.5))
+                    .frame(maxWidth: .infinity)
+                Spacer()
             }
-            .navigationTitle(getLocalString(string: "select_shop"))
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationBarItems(trailing: Button(getLocalString(string: "close_btn")) {
-                showShopPicker = false
-            })
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(Color.white)
     }
 
-    // MARK: - Payment Picker Sheet
+    /// Bookmark · name + address · chevron — mirrors Android's `adapter_shop_choose`.
+    private func shopRow(_ shop: Shop) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: "bookmark")
+                .font(.system(size: 17))
+                .foregroundColor(dark)
+                .frame(width: 24)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(shop.name)
+                    .font(.Lato(size: 15))
+                    .foregroundColor(dark.opacity(0.75))
+                    .fixedSize(horizontal: false, vertical: true)
+                if !shop.address.isEmpty {
+                    Text(shop.address)
+                        .font(.Lato(size: 14))
+                        .foregroundColor(Color(UIColor(named: "8C95AA")!))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(dark)
+        }
+        .padding(14)
+        .background(Color.white)
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(borderColor, lineWidth: 1)
+        )
+        .cornerRadius(14)
+    }
 
     private var paymentPickerSheet: some View {
         NavigationView {
@@ -905,18 +890,8 @@ struct CheckoutView: View {
                     showPaymentPicker = false
                 } label: {
                     HStack(spacing: 14) {
-                        Group {
-                            if !method.icon.isEmpty, let url = URL(string: method.icon) {
-                                WebImage(url: url)
-                                    .resizable()
-                                    .scaledToFit()
-                            } else {
-                                Image(systemName: "creditcard.fill")
-                                    .font(.system(size: 18))
-                                    .foregroundColor(dark)
-                            }
-                        }
-                        .frame(width: 40, height: 26)
+                        paymentIcon(for: method)
+                            .frame(width: 40, height: 26)
                         Text(method.name)
                             .font(.Lato(size: 15))
                             .foregroundColor(dark)
@@ -953,17 +928,41 @@ struct CheckoutView: View {
         ) {}
     }
 
-    private var successDialog: some View {
-        CustomDialog(
-            isActive: $showSuccess,
-            icone_type: 1,
-            title: successTitle,
-            message: successMsg,
-            buttonTitle: "OK",
-            padd: 50
-        ) {
-            settings.selection = 1
-            onDismiss?()
+    /// Estimate line on the confirmation screen: the ASAP window, or the booked slot.
+    private var confirmedEstimate: String {
+        isAsap == 1 ? estimatedTimeText : "\(deliveryDateDisplay)  \(deliveryTime)"
+    }
+
+    /// Routes to the right payment experience once `order/add` succeeds.
+    ///
+    /// The checkout sheet closes first: the card WebView, the Idram hand-off and the
+    /// confirmation screen all live at the tab-bar level, so they must not be stacked
+    /// on top of this sheet. Nothing is treated as paid until `checkOrderStatus` has
+    /// asked the server.
+    private func startPayment(for response: Message) {
+        settings.orderId           = response.order_id ?? 0
+        settings.thankYouEstimate  = confirmedEstimate
+        settings.thankYouIsDelivery = isDelivery == 1
+        settings.thankYouMessage   = response.message ?? ""
+
+        let url = response.url ?? ""
+        onDismiss?()                                   // close the checkout sheet
+
+        guard selectedPaymentKey != "cash", !url.isEmpty else {
+            checkOrderStatus(settings)                 // cash, or nothing to pay through
+            return
+        }
+
+        if selectedPaymentKey == "idram" {
+            settings.selection = 0
+            if !configureAndPay(using: url) {
+                // Idram missing or the link was malformed — fall back to the bank page.
+                settings.paymentUrl = url + "&from_app=ios"
+                settings.showPayment = true
+            }
+        } else {
+            settings.paymentUrl = url + "&from_app=ios"
+            settings.showPayment = true
         }
     }
 
@@ -976,7 +975,8 @@ struct CheckoutView: View {
             isDelivery: isDelivery,
             isAsap: isAsap,
             shopId: selectedShop?.id ?? "0",
-            coupon: appliedCoupon
+            coupon: appliedCoupon,
+            address: isDelivery == 1 ? selectedAddress : nil
         )
         FetchCartData(data: req) { response in
             DispatchQueue.main.async {
@@ -1007,10 +1007,13 @@ struct CheckoutView: View {
             isDelivery: isDelivery,
             isAsap: isAsap,
             shopId: selectedShop?.id ?? "0",
-            coupon: appliedCoupon
+            coupon: appliedCoupon,
+            address: isDelivery == 1 ? selectedAddress : nil
         )
+        isPricing = true
         FetchCartData(data: req) { response in
             DispatchQueue.main.async {
+                isPricing = false
                 if let res = response { checkoutData = res }
             }
         }
@@ -1058,7 +1061,11 @@ struct CheckoutView: View {
             billing_email:     billingEmail,
             billing_phone:     fullPhone,
             billing_comment:   comment,
-            billing_city:      selectedAddress?.city ?? "",
+            billing_city:      selectedAddress?.city      ?? "",
+            billing_state:     selectedAddress?.state     ?? "",
+            billing_district:  selectedAddress?.district  ?? "",
+            billing_latitude:  selectedAddress?.latitude  ?? "",
+            billing_longitude: selectedAddress?.longitude ?? "",
             coupon:            appliedCoupon,
             save_card:         false,
             user_card_id:      selectedCardId
@@ -1067,16 +1074,12 @@ struct CheckoutView: View {
         Checkout(data: model) { response in
             DispatchQueue.main.async {
                 isPlacingOrder = false
-                if let res = response, res.status == 200 {
-                    successTitle = res.title ?? getLocalString(string: "order_placed")
-                    successMsg   = res.message ?? ""
-                    showSuccess  = true
-                    CartManager.shared.clearAll()
-                    settings.cart_count = 0
-                } else {
+                guard let res = response, res.status == 200 else {
                     errorMessage = response?.message ?? getLocalString(string: "wrond_command")
                     showError = true
+                    return
                 }
+                startPayment(for: res)
             }
         }
     }

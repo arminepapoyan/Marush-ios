@@ -251,9 +251,12 @@ struct menuItemButtonView: View {
                         .foregroundColor(.black)
                 }
             }
+            // Fill the row even without a Spacer (logout has no chevron), so the
+            // whole white area belongs to the item.
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 12)
             .padding(.vertical)
-            
+
             if showsBottomBorder {
                 Rectangle()
                     .fill(Color(UIColor(named: "CEF0F7")!))
@@ -261,5 +264,8 @@ struct menuItemButtonView: View {
             }
         }
         .padding(.horizontal, 5)
+        // Without this only the text and the chevron are hit-testable — empty space
+        // and padding do not receive taps in SwiftUI.
+        .contentShape(Rectangle())
     }
 }

@@ -304,6 +304,9 @@ struct birthdayInput: View {
             RoundedRectangle(cornerRadius: 30)
                 .stroke(Color(UIColor(named: "CustomGray")!), lineWidth: 1)
         )
+        // Fill sits inside the rounded clip, as in InputView — applying it from the
+        // outside painted square white corners around the pill.
+        .background(Color.white)
         .overlay(alignment: .trailing){
             wrongBirthdate ?
             VStack(alignment: .trailing) {

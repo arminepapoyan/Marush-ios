@@ -111,6 +111,72 @@ func extractParameters(from urlString: String) -> [String: String]? {
 //}
 
 
+// MARK: - Payment result
+
+/// Asks the server whether the tracked order was actually paid, and reacts accordingly.
+///
+/// Every return path — closing the card WebView, coming back from Idram, or a push —
+/// funnels through here, so the client never decides payment success on its own.
+func checkOrderStatus(_ settings: UserSettings, selection: Int = 1) {
+    guard settings.orderId != 0 else { return }
+
+    getOrder(data: settings.orderId) { response in
+        DispatchQueue.main.async {
+            guard let response, response.status == 200,
+                  let order = response.orders?.first else {
+                handlePaymentError(settings)
+                return
+            }
+            handleOrderResult(order, settings: settings, selection: selection)
+        }
+    }
+}
+
+private func handleOrderResult(_ order: Order, settings: UserSettings, selection: Int) {
+    let isCash = order.paymentMethod.key == "cash"
+
+    if !order.payed && !isCash {
+        handlePaymentError(settings)
+        settings.selection = 2          // back to the cart so the user can retry
+        return
+    }
+
+    // Paid, or cash on delivery — the order stands.
+    settings.cart_count = 0
+    CartManager.shared.clearAll()
+    NotificationCenter.default.post(name: .reloadHome, object: nil, userInfo: [:])
+
+    settings.selection = selection
+    settings.showThankYou = true
+}
+
+private func handlePaymentError(_ settings: UserSettings) {
+    ShowCustomDialog(
+        getLocalString(string: "payment_not_processed"),
+        getLocalString(string: "there_was_problem_with_order_payment"),
+        0,
+        settings: settings
+    )
+}
+
+/// Re-packs the Idram URL returned by `order/add` so it carries our callback scheme.
+/// The backend hands back an `idramapp://` link without one, and iOS — unlike Android,
+/// which uses `onActivityResult` — needs it to get the user back into the app.
+@discardableResult
+func configureAndPay(using urlString: String) -> Bool {
+    guard let parameters = extractParameters(from: urlString) else {
+        print("Idram: could not read parameters from \(urlString)")
+        return false
+    }
+
+    return IdramPaymentManager.pay(
+        receiverName: parameters["receiverName"] ?? "",
+        receiverId:   parameters["receiverId"]   ?? "",
+        title:        parameters["title"]        ?? "",
+        amount:       Double(parameters["amount"] ?? "0") ?? 0
+    )
+}
+
 func handleLogout(settings: UserSettings) {
     DispatchQueue.main.async {
         withAnimation{

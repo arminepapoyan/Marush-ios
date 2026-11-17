@@ -125,6 +125,38 @@ struct TabContent: View {
 //                    .presentationSizingPage()
 //            }
         }
+        // ── Card payment (bank page in a WebView) ───────────────────────────
+        .sheet(isPresented: $settings.showPayment) { paymentSheet }
+        // ── Order confirmed ─────────────────────────────────────────────────
+        .fullScreenCover(isPresented: $settings.showThankYou) {
+            OrderConfirmedView(
+                estimate: settings.thankYouEstimate,
+                isDelivery: settings.thankYouIsDelivery,
+                serverMessage: settings.thankYouMessage,
+                onTrackOrder: {
+                    settings.showThankYou = false
+                    settings.selection = 1
+                },
+                onClose: {
+                    settings.showThankYou = false
+                    settings.selection = 0
+                }
+            )
+            .environmentObject(settings)
+            .environmentObject(userData)
+            .environmentObject(appData)
+        }
+        .overlay(settings.customDialog.showDialog ? messageDialog : nil)
+        // Return from Idram: marush://idramPayment/payment/idram
+        .onOpenURL { url in handleDeepLink(url: url) }
+        // Push telling us the order was paid while the WebView was still open.
+        .onReceive(NotificationCenter.default.publisher(for: .orderPayed)) { notification in
+            guard let orderIdString = notification.userInfo?["orderId"] as? String,
+                  let orderId = Int(orderIdString),
+                  orderId == settings.orderId else { return }
+            settings.showPayment = false
+            checkOrderStatus(settings)
+        }
         
 //        VStack(spacing: 0){
 //            TabView(selection: $settings.selection) {
@@ -228,6 +260,7 @@ struct TabContent: View {
 //        }
     }
         
+    /// Dialog used for payment failures (`ShowCustomDialog`).
     var paymentSheet: some View{
         ZStack{
             VStack{
@@ -261,9 +294,10 @@ struct TabContent: View {
                         confirmButton: getLocalString(string: "close"),
                         cancelButton: getLocalString(string: "cancel"),
                         onConfirm: {
-//                            getOrderData(settings, selection: 0)
                             closePaymentAlert.toggle()
-                            settings.showPayment.toggle()
+                            settings.showPayment = false
+                            // The user left the bank page — ask the server what really happened.
+                            checkOrderStatus(settings)
                         })
                     .transition(.scale)  // Smooth transition animation
                     .animation(.easeInOut, value: closePaymentAlert)
@@ -366,9 +400,10 @@ struct TabContent: View {
         }
         
         if url.pathComponents.contains("payment") && url.pathComponents.contains("idram"){
-            print("Get order data for idram launched")
+            // Back from Idram — give the backend a moment to record the payment,
+            // then ask it whether the order actually went through.
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-//                getOrderData(settings, selection: settings.selection)
+                checkOrderStatus(settings, selection: settings.selection)
             }
         }
     }

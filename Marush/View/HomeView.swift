@@ -85,7 +85,7 @@ struct HomeView: View {
                             VStack(spacing: 20) {
                                 VStack(spacing: 20) {
                                     categoriesSlider
-                                    if isLoading {
+                                    if isLoading || appData.productCategories.isEmpty {
                                         // Every real section is gated on a non-empty array,
                                         // so while loading nothing rendered at all. Stand in
                                         // with two category blocks of card-sized placeholders.
@@ -256,10 +256,9 @@ struct HomeView: View {
             //            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
             //                testIdram()
             //            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                loadData()
-                isLoading = false
-            }
+            // `loadData()` owns the flag; clearing it here turned the shimmer off
+            // before a single response had arrived.
+            loadData()
         }
         //        .overlay(showAlert ? errorDialog : nil)
         .onReceive(NotificationCenter.default.publisher(for: .reloadHome)) { notification in
@@ -313,7 +312,8 @@ struct HomeView: View {
             } else {
                 print("Failed to fetch user data.")
             }
-            isLoading = false
+            // Deliberately does not touch `isLoading`: the home content is driven by
+            // `app/data`, and this call usually returns first.
         }
     }
     
